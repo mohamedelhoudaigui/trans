@@ -10,4 +10,25 @@
 #                                                                              #
 # **************************************************************************** #
 
+services:
+  test_network:
+    build:
+      context: ./test_net
+      dockerfile: dockerfile
+    container_name: we3_test_network
+    networks:
+      - app_network
 
+  module:
+    build:
+      context: ./module
+      dockerfile: dockerfile
+    container_name: web3_module
+    volumes:
+      - ./module:/app
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
