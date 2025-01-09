@@ -1,0 +1,12 @@
+FROM node:18
+
+WORKDIR /local_net
+
+COPY package.json /local_net
+
+RUN npm install
+
+COPY hardhat.config.js /local_net
+
+#CMD [ "sleep", "infinity" ]
+CMD [ "npm", "run", "start" ]

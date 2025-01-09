@@ -1,0 +1,12 @@
+{
+	"name": "local_eth_net",
+	"version": "1.0.0",
+	"description": "hardhat localnet image",
+	"scripts": {
+	  "start": "npx hardhat node"
+	},
+	"dependencies": {
+	  "@nomicfoundation/hardhat-toolbox": "latest",
+	  "hardhat": "latest"
+	}
+  }
