@@ -15,4 +15,11 @@ contract Log
         string  player2;
         string  winner;
     }
+
+    uint tournament_id;
+
+    constructor()
+    {
+        tournament_id = 0;
+    }
 }
