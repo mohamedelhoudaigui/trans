@@ -1,15 +1,12 @@
 import os
 from web3 import Web3
 from solcx import install_solc
-from dotenv import load_dotenv
 
 from scripts.interactor import ContractInteractor
 from scripts.compile import compile_solidity, get_contract_data
 from scripts.deploy import deploy_contract
 
 
-load_dotenv()
- 
 SOLIDITY_VERSION = os.getenv('SOLIDITY_VERSION') 
 SOL_PATH = os.getenv('SOL_PATH')
 CONTRACT_NAME = os.getenv('CONTRACT_NAME')

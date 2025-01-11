@@ -1,4 +1,3 @@
 web3
 pytest
 py-solc-x
-python-dotenv
