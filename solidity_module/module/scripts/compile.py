@@ -38,7 +38,6 @@ def get_contract_data(compiled_sol, contract_name):
     for source_file in compiled_sol["contracts"]:
         if contract_name in compiled_sol["contracts"][source_file]:
             contract_interface = compiled_sol["contracts"][source_file][contract_name]
-            
             bytecode = contract_interface["evm"]["bytecode"]["object"]
             abi = contract_interface["abi"]
             print("-----------abi and bytecode getted successfully-----------------")

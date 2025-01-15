@@ -1,1 +1,1 @@
-add ownable to the contract (openzeppelin)
+It would be amazing to add gas estimation for each operation

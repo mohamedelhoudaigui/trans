@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-contract Log
+contract Tournament_logger
 {
     // types and constructor:
     struct Tournament {
@@ -61,5 +61,11 @@ contract Log
             t.winner
         );
     }
-
+    
+    function get_count() external view
+    is_owner(msg.sender)
+    returns(uint)
+    {
+        return (tournament_id); 
+    }
 }
