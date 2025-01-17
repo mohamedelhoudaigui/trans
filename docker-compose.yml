@@ -1,24 +1,48 @@
+volumes:
+  database_volume:
+
 networks:
   backend:
     driver: bridge
 
 services:
-  test_network:
+  web3_test_network:
+    container_name: web3_test_network
     build:
-      context: ./solidity_module/test_net
+      context: ./test_net
       dockerfile: dockerfile
-    container_name: we3_test_network
-    networks:
-      - backend
-
-  module:
-    build:
-      context: ./solidity_module/module
-      dockerfile: dockerfile
-    container_name: web3_module
-    volumes:
-      - ./solidity_module/module:/app
     networks:
       - backend
     env_file:
-      - ./solidity_module/.env
+      - .env
+
+  web3_module:
+    container_name: web3_module
+    build:
+      context: ./solidity_module
+      dockerfile: dockerfile
+    volumes:
+      - ./solidity_module:/app
+    networks:
+      - backend
+    env_file:
+      - .env
+
+  postgres_db:
+    container_name: postgres_db
+    image: postgres:17
+    volumes:
+      - database_volume:/var/lib/postgresql/data
+    networks:
+      - backend
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+
