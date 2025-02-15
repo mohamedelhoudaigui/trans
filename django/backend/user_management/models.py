@@ -91,10 +91,10 @@ class Chat(models.Model):
 
 	def __str__(self):
 		participant_names = [p.user.username for p in self.participants.all()]
-    	return f"Chat between {', '.join(participant_names)}"
+		return f"Chat between {', '.join(participant_names)}"
 
 	class Meta:
-		ordering = ['-timestamp']
+		ordering = ['-created_at']
 
 class Message(models.Model):
 
@@ -110,7 +110,7 @@ class Message(models.Model):
 	timestamp = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-    	return f"Message from {self.sender.user.username} in {self.chat}: {self.content[:50]}..."
+		return f"Message from {self.sender.user.username} in {self.chat}: {self.content[:50]}..."
 
 	class Meta:
 		ordering = ['-timestamp']

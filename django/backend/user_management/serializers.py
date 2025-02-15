@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import Profile, Match, Tournament
+from .models import Profile, Match, Tournament, Chat, Message 
+from django.contrib.auth.models import User
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id']
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,3 +21,13 @@ class TournamentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tournament
         fields = ['id', 'timestamp', 'winner']
+
+class TournamentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chat
+        fields = ['participants', 'created_at']
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = ['chat', 'sender', 'content', 'timestamp']
