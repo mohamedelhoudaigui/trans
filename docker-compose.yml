@@ -1,6 +1,13 @@
 volumes:
   database_volume:
 
+  django_volume:
+    driver: local
+    driver_opts:
+      o: bind
+      device: ./django  # Host directory to bind
+      type: none
+
 networks:
   backend:
     driver: bridge
@@ -45,4 +52,16 @@ services:
       timeout: 5s
       retries: 5
 
-
+  django:
+    container_name: django
+    build:
+      context: ./django
+      dockerfile: dockerfile
+    volumes:
+      - django_volume:/app
+    networks:
+      - backend
+    env_file:
+    - .env
+    ports:
+      - "8000:8000"
