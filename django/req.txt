@@ -1,5 +1,0 @@
-django
-djangorestframework
-channels
-markdown
-django-filter

@@ -1,11 +1,9 @@
 volumes:
-  database_volume:
-
-  django_volume:
+  fastify_volume:
     driver: local
     driver_opts:
       o: bind
-      device: ./django  # Host directory to bind
+      device: ./fastify  # Host directory to bind
       type: none
 
 networks:
@@ -13,18 +11,8 @@ networks:
     driver: bridge
 
 services:
-  web3_test_network:
-    container_name: web3_test_network
-    build:
-      context: ./test_net
-      dockerfile: dockerfile
-    networks:
-      - backend
-    env_file:
-      - .env
-
-  web3_module:
-    container_name: web3_module
+  solidity_module:
+    container_name: solidity_module
     build:
       context: ./solidity_module
       dockerfile: dockerfile
@@ -35,33 +23,16 @@ services:
     env_file:
       - .env
 
-  postgres_db:
-    container_name: postgres_db
-    image: postgres:17
-    volumes:
-      - database_volume:/var/lib/postgresql/data
-    networks:
-      - backend
-    env_file:
-      - .env
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-
-  django:
-    container_name: django
+  fastify_module:
+    container_name: fastify_module
     build:
-      context: ./django
+      context: ./fastify_module
       dockerfile: dockerfile
     volumes:
-      - django_volume:/app
+      - fastify_volume:/app
     networks:
       - backend
     env_file:
     - .env
     ports:
-      - "8000:8000"
+      - "3000:3000"

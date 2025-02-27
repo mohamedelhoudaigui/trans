@@ -1,0 +1,19 @@
+{
+  "name": "fastify_module",
+  "version": "1.0.0",
+  "main": "./src/app.js",
+  "scripts": {
+    "server": "node ./src/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
