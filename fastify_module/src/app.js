@@ -1,26 +1,24 @@
-const app = require('fastify')({ logger: true })
-const { setup_user_table } = require('./modules/user/serve');
-const user_routes = require('./modules/user/routes')
+const fastify = require('fastify')({ logger: true })
+const { setup_user_table } = require('./models/users');
+const user_routes = require('./routes/users')
+require("dotenv").config()
 
-// register plugins:
-app.register(require('./plugins/db'));
+
+fastify.register(require('./plugins/db_plugin'));
+fastify.register(user_routes, { prefix: '/api/users' })
 
 // make db tables :
-setup_user_table(app)
+setup_user_table(fastify)
 
-// modules routes:
-user_routes(app)
-
-async function start()
-{
+const start = async () => {
     try
     {
-        await app.listen({ port: 3000 });
-        app.log.info('Server listening on http://localhost:3000');
+        await fastify.listen({ port: process.env.PORT || 3000 });
+        fastify.log.info(`Server listening ${fastify.server.address().port}`);
     }
-    catch  (err)
+    catch(err)
     {
-        app.log.error(err);
+        fastify.log.error(err);
         process.exit(1);
     }
 }

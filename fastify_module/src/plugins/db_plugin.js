@@ -1,6 +1,5 @@
 const fp = require('fastify-plugin');
 const Database = require('better-sqlite3');
-const user_define = require('../modules/user/serve')
 
 async function dbPlugin(fastify, options) {
 
