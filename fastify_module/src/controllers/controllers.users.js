@@ -1,9 +1,9 @@
-const { user_create, user_delete, user_fetch, user_update, user_all } = require('../models/users');
-const { send_response, is_exist } = require('../utils/req_res')
+const { user_create, user_delete, user_fetch, user_update, user_all } = require('../models/models.users');
+const { send_response, is_exist } = require('../utils/utils.req_res')
 
 async function GetAllUsers (request, reply) {
     try {
-        res = user_all(this.db)
+        const res = user_all(this.db)
         return send_response(reply, 200, res)
 
     } catch (err) {
@@ -14,8 +14,8 @@ async function GetAllUsers (request, reply) {
 async function GetUserById (request, reply) {
 
     try {
-        id = request.params.id
-        res = user_fetch(this.db, id)
+        const id = request.params.id
+        const res = user_fetch(this.db, id)
         return send_response(reply, 200, res)
 
     } catch(err) {
@@ -26,8 +26,8 @@ async function GetUserById (request, reply) {
 async function CreateUser (request, reply) {
 
     try {
-        { name, email, password } = request.body;
-        res = user_create(this.db, name, email, password)
+        const { name, email, password } = request.body;
+        const res = user_create(this.db, name, email, password)
         return send_response(reply, 200, res)
 
     } catch (err) {
@@ -38,9 +38,9 @@ async function CreateUser (request, reply) {
 async function UpdateUser (request, reply) {
 
     try {
-        id = request.params.id
-        { name, email, password } = request.body;
-        res = user_update(this.db, id, name, email, password)
+        const id = request.params.id
+        const { name, email, password } = request.body;
+        const res = user_update(this.db, id, name, email, password)
         return send_response(reply, 200, res)
 
     } catch (err) {
@@ -51,8 +51,8 @@ async function UpdateUser (request, reply) {
 async function DeleteUser (request, reply) {
 
     try {
-        id = request.params.id
-        res = user_delete(this.db, id)
+        const id = request.params.id
+        const res = user_delete(this.db, id)
         return send_response(reply, 200, res)
 
     } catch (err) {
