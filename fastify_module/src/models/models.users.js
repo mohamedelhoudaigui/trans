@@ -62,38 +62,6 @@ function user_update(db, id, name, email, password) {
     return result.changes; // Return the number of rows updated
 }
 
-//----------------------------------
-
-function create_user_schema() {
-    return ({
-        schema: {
-            body: {
-                type: 'object',
-                required: ['name', 'email', 'password'],
-                properties: {
-                    name: { type: 'string' },
-                    email: { type: 'string' },
-                    password: { type: 'string' }
-                }
-            }
-        }
-    })
-}
-
-function update_user_schema() {
-    return ({
-        schema: {
-            body: {
-                type: 'object',
-                properties: {
-                    name: { type: 'string' },
-                    email: { type: 'string' },
-                    password: { type: 'string' }
-                }
-            }
-        }
-    })
-}
 
 module.exports = {
     setup_user_table,
@@ -102,7 +70,5 @@ module.exports = {
     user_fetch,
     user_update,
     user_all,
-    create_user_schema,
-    update_user_schema,
 }
 

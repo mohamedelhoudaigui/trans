@@ -1,13 +1,40 @@
 const { GetAllUsers, GetUserById, CreateUser, UpdateUser, DeleteUser } = require('../controllers/controllers.users')
-const { create_user_schema, update_user_schema } = require('../models/models.users')
 
 function user_routes(fastify)
 {
-    fastify.get('/', GetAllUsers)
-    fastify.get('/:id', GetUserById)
-    fastify.post('/', create_user_schema(), CreateUser)
-    fastify.put('/:id', update_user_schema(), UpdateUser)
-    fastify.delete('/:id', DeleteUser)
+    fastify.post('/', {
+        schema: {
+            body: {
+                type: 'object',
+                required: ['name', 'email', 'password'],
+                properties: {
+                    name: { type: 'string' },
+                    email: { type: 'string' },
+                    password: { type: 'string' }
+                }
+            }
+        }
+
+    }, CreateUser)
+
+    fastify.put('/:id', {
+        onRequest: [fastify.auth],
+        schema: {
+            body: {
+                type: 'object',
+                properties: {
+                    name: { type: 'string' },
+                    email: { type: 'string' },
+                    password: { type: 'string' }
+                }
+            }
+        }
+
+    }, UpdateUser)
+
+    fastify.get('/',{ onRequest: [fastify.auth] }, GetAllUsers)
+    fastify.get('/:id', { onRequest: [fastify.auth] }, GetUserById)
+    fastify.delete('/:id', { onRequest: [fastify.auth] } , DeleteUser)
 }
 
 module.exports = {
