@@ -1,7 +1,8 @@
 const fp = require('fastify-plugin');
 const Database = require('better-sqlite3');
 
-async function dbPlugin(fastify, options) {
+
+function dbPlugin(fastify, options) {
 
     const db = new Database('database.db');
 
@@ -13,4 +14,6 @@ async function dbPlugin(fastify, options) {
     });
 }
 
-module.exports = fp(dbPlugin);
+
+
+module.exports = fp(dbPlugin)
