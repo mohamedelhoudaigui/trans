@@ -5,7 +5,9 @@
 // password -> VARCHAR 100 (hashed)
 // wins -> INTEGER
 // loses -> INTEGERT
+// status -> BOOL for status (might change to redis or websocket ??)
 // created_at -> TIMESTAMP
+
 
 // resources:
 // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#class-statement
@@ -13,23 +15,29 @@
 function setup_user_table(app) {
     app.after(() => {
         app.db.prepare(user_define()).run();
-        app.db.prepare(user_index()).run();
+        app.db.prepare(user_name_index()).run();
+        app.db.prepare(user_email_index()).run();
     });
 }
 
 function user_define() {
     return `CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) NOT NULL,
+            name VARCHAR(100) UNIQUE NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
             password VARCHAR(100) NOT NULL,
             wins INTEGER DEFAULT 0,
             loses INTEGER DEFAULT 0,
+            status BOOL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`
 }
 
-function user_index() {
+function user_email_index() {
     return `CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);`
+}
+
+function user_name_index() {
+    return `CREATE INDEX IF NOT EXISTS idx_users_name ON users (name);`
 }
 
 function user_all(db) {

@@ -1,5 +1,5 @@
 const { user_create, user_delete, user_fetch, user_update, user_all } = require('../models/models.users');
-const { send_response, is_exist } = require('../utils/utils.req_res')
+const { send_response, does_exist } = require('../utils/utils.req_res')
 const { hash_password } = require('../utils/utils.security')
 
 async function GetAllUsers (request, reply) {
@@ -28,6 +28,10 @@ async function CreateUser (request, reply) {
 
     try {
         const { name, email, password } = request.body;
+
+        if (await does_exist(this.db, name, email))
+            return send_response(reply, 409, "user already exists")
+
         const hashed_password = await hash_password(password)
         const res = await user_create(this.db, name, email, hashed_password)
         return send_response(reply, 200, res)

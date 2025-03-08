@@ -7,7 +7,11 @@ async function Login(request, reply) {
         const valid = await verify_password(this.db, email, password)
         if (valid)
         {
-            const token = this.jwt.sign({ email, password })
+            const token = this.jwt.sign(
+                { email }, // payload
+                { expiresIn: '14d' }
+
+            )
             send_response(reply, 200, token)
         } else
         {

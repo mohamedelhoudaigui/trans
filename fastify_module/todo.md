@@ -1,1 +1,3 @@
-need to figure out uniqueness handeling in users model
+need to implement refresh token
+implement logout
+implement friend table to manage friends (many to many)
