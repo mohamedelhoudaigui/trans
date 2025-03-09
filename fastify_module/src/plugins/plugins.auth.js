@@ -12,5 +12,4 @@ async function authPlugin(fastify, options) {
     })
 }
 
-
 module.exports = fp(authPlugin)
