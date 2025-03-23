@@ -34,25 +34,36 @@ async function Refresh(request, reply) {
         const decoded_token = this.jwt.verify(refresh_token)
         if (!refresh_tokens_check(this.db, refresh_token))
             send_response(reply, 403, 'invalid refresh token')
+
         const new_access_token = gen_jwt_token(this, decoded_token.email, process.env.ACCESS_TOKEN_EXPIRE)
 
         return send_response(reply, 200, new_access_token)
 
     } catch (err) {
-        return send_response(reply, 500, err)
+         if (err instanceof jwt.TokenExpiredError) {
+            await refresh_tokens_delete(this.db, refresh_token);
+            return send_response(reply, 403, 'refresh token expired');
+        }
+        return send_response(reply, 500, err.message);
     }
 }
 
 async function Logout(request, reply) {
     try {
-        
+        const { refresh_token } = request.body;
+        if (!refresh_token)
+            return send_response(reply, 400, "refresh token required");
+
+        await refresh_tokens_delete(this.db, refresh_token);
+        return send_response(reply, 200, "Successfully logged out");
 
     } catch (err) {
-        send_response(reply, 500, err)
+        return send_response(reply, 500, err.message);
     }
 }
 
 modle.exports = {
     Login,
     Refresh,
+    Logout
 }
