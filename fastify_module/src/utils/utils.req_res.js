@@ -12,6 +12,7 @@ function does_exist(db, name, email) {
         throw err;
     }
 }
+
 module.exports = {
     send_response,
     does_exist,

@@ -41,21 +41,21 @@ function user_name_index() {
 }
 
 function user_all(db) {
-    const stmt = db.prepare('SELECT * from users');
-    const result = stmt.all();
+    const stmt = db.prepare('SELECT * from users')
+    const result = stmt.all()
     return result; // Return the ID of the newly added user
 }
 
 function user_fetch(db, id) {
-    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-    const result = stmt.get(id);
+    const stmt = db.prepare('SELECT * FROM users WHERE id = ?')
+    const result = stmt.get(id)
     return result; // Return the user object or undefined if not found
 }
 
 function user_create(db, name, email, password) {
-    const stmt = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)');
-    const result = stmt.run(name, email, password);
-    return result.lastInsertRowid; // Return the ID of the newly added user
+    const stmt = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)')
+    const result = stmt.run(name, email, password)
+    return result.lastInsertRowid // Return the ID of the newly added user
 }
 
 function user_delete(db, id) {

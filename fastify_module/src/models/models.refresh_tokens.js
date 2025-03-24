@@ -1,7 +1,6 @@
 // refresh_token fields :
 // id -> PRIMARY KEY
 // token -> VARCHAR
-// status -> BOOL
 // created_at  -> DATE
 
 
@@ -16,7 +15,6 @@ function refresh_tokens_define() {
     return `CREATE TABLE IF NOT EXISTS refresh_tokens (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             token VARCHAR UNIQUE NOT NULL,
-            is_active BOOL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`
 }
 

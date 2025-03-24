@@ -32,7 +32,7 @@ function user_routes(fastify)
 
     }, UpdateUser)
 
-    fastify.get('/',{ onRequest: [fastify.auth] }, GetAllUsers)
+    fastify.get('/', GetAllUsers)
     fastify.get('/:id', { onRequest: [fastify.auth] }, GetUserById)
     fastify.delete('/:id', { onRequest: [fastify.auth] } , DeleteUser)
 }

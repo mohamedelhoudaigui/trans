@@ -3,7 +3,8 @@ const { verify_password, gen_jwt_token } = require('../utils/utils.security')
 const { refresh_tokens_create, refresh_tokens_check, refresh_tokens_delete } = require('../models/models.refresh_tokens')
 require('dotenv').config()
 
-async function Login(request, reply) {
+async function Login(request, reply)
+{
     try {
         const { email, password } = request.body
         if (!email || !password)
@@ -62,7 +63,7 @@ async function Logout(request, reply) {
     }
 }
 
-modle.exports = {
+module.exports = {
     Login,
     Refresh,
     Logout
