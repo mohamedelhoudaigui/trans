@@ -1,6 +1,6 @@
-const { GetAllUsers, GetUserById, CreateUser, UpdateUser, DeleteUser } = require('../controllers/controllers.users')
+const UserCtrl = require('../controllers/controllers.users')
 
-function user_routes(fastify)
+function UserRoutes(fastify)
 {
     fastify.post('/', {
         schema: {
@@ -15,7 +15,7 @@ function user_routes(fastify)
             }
         }
 
-    }, CreateUser)
+    }, UserCtrl.CreateUser)
 
     fastify.put('/:id', {
         onRequest: [fastify.auth],
@@ -30,13 +30,11 @@ function user_routes(fastify)
             }
         }
 
-    }, UpdateUser)
+    }, UserCtrl.UpdateUser)
 
-    fastify.get('/', GetAllUsers)
-    fastify.get('/:id', { onRequest: [fastify.auth] }, GetUserById)
-    fastify.delete('/:id', { onRequest: [fastify.auth] } , DeleteUser)
+    fastify.get('/', UserCtrl.GetAllUsers)
+    fastify.get('/:id', { onRequest: [fastify.auth] }, UserCtrl.GetUserById)
+    fastify.delete('/:id', { onRequest: [fastify.auth] } , UserCtrl.DeleteUser)
 }
 
-module.exports = {
-    user_routes,
-}
+module.exports = UserRoutes

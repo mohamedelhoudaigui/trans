@@ -1,6 +1,6 @@
 const { send_response } = require('../utils/utils.req_res')
 const { verify_password, gen_jwt_token } = require('../utils/utils.security')
-const { refresh_tokens_create, refresh_tokens_check, refresh_tokens_delete } = require('../models/models.refresh_tokens')
+const RefreshTokenRepo = require('../models/models.refresh_tokens')
 require('dotenv').config()
 
 async function Login(request, reply)

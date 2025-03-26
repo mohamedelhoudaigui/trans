@@ -9,8 +9,7 @@
 
 const AppDataSource = require('./models.init.js')
 
-
-const UserRepository = {
+const UserRepo = {
 
     // Create a new user
     async user_create(userData) {
@@ -46,8 +45,8 @@ const UserRepository = {
     // Delete a user by ID
     async user_delete(userId) {
         try {
-            const repo = AppDataSource.getRepository("User");
-            const result = await repo.delete(userId);
+            const repo = AppDataSource.getRepository("User")
+            const result = await repo.delete(userId)
             return {
                 success: result.affected > 0,
                 code: result.affected > 0
@@ -70,8 +69,8 @@ const UserRepository = {
     // Fetch a single user by ID
     async user_fetch(userId) {
         try {
-            const repo = AppDataSource.getRepository("User");
-            const user = await repo.findOne({ where: { id: userId } });
+            const repo = AppDataSource.getRepository("User")
+            const user = await repo.findOne({ where: { id: userId } })
 
             if (!user) return {
                 success: false,
@@ -166,5 +165,5 @@ const UserRepository = {
     }
 }
 
-module.exports = UserRepository
+module.exports = UserRepo
 

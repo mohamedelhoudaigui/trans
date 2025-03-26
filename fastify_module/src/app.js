@@ -1,7 +1,7 @@
 const fastify = require('fastify')({ logger: true })
 require('dotenv').config()
 
-const { user_routes } = require('./routes/routes.users')
+const UserRoutes = require('./routes/routes.users')
 const { auth_routes } = require('./routes/routes.auth')
 const { friendship_routes } = require('./routes/routes.friendships')
 const { shutdown_handler } = require('./utils/utils.server')
@@ -12,7 +12,7 @@ fastify.register(require('./plugins/plugins.auth'));
 fastify.register(require('@fastify/jwt'), { secret: process.env.JWT_KEY });
 
 // Routes:
-fastify.register(user_routes, { prefix: '/api/users' })
+fastify.register(UserRoutes, { prefix: '/api/users' })
 fastify.register(auth_routes, { prefix: '/api/auth' })
 fastify.register(friendship_routes, { prefix: '/api/friend' })
 

@@ -40,12 +40,32 @@ const User = new EntitySchema({
     },
 })
 
+const RefreshToken = new EntitySchema({
+    name: "RefreshToken",
+    tableName: "refresh_tokens",
+    columns: {
+        id: {
+            primary: true,
+            type: "integer",
+            generated: true,
+        },
+        token: {
+            type: "varchar",
+            length: 100,
+        },
+        created_at: {
+            type: "datetime",
+            default: () => "CURRENT_TIMESTAMP"
+        },
+    },
+})
+
 const AppDataSource = new DataSource({
     type: "sqlite",
     database: process.env.DB_PATH,
     synchronize: true,
     logging: false,
-    entities: [User],
+    entities: [User, RefreshToken],
 });
 
-module.exports = AppDataSource;
+module.exports = AppDataSource

@@ -3,46 +3,75 @@
 // token -> VARCHAR
 // created_at  -> DATE
 
+const AppDataSource = require('./models.init.js')
 
-function setup_refresh_tokens_table(app) {
-    app.after(() => {
-        app.db.prepare(refresh_tokens_define()).run()
-        app.db.prepare(refresh_tokens_index()).run()
-    });
+const RefreshTokenRepo = {
+
+    async refresh_tokens_create(token) {
+
+        try {
+            const repo = AppDataSource.getRepository("RefreshToken")
+            const newToken = repo.create({
+                token: token
+            })
+            await repo.save(newToken)
+            return {
+                success: true,
+                code: 200,
+                message: "Token added to database"
+            }
+        }
+        catch (err) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            }
+        }
+    }
+
+    async refresh_tokens_delete(token) {
+        try {
+            const repo = AppDataSource.getRepository("RefreshToken")
+            const result = await repo.delete({ token: token })
+
+            return {
+                success: true,
+                code: 204,
+                message: "Token deleted from database"
+            }
+        }
+        catch(err) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            }
+        }
+    }
+
+    async refresh_tokens_check(token) {
+        try {
+            const repo = AppDataSource.getRepository("RefreshToken")
+            const token = await repo.findOne({ where: { token: token } })
+            if (!token) return {
+                success: true,
+                code: 404,
+                message: "Token not found",
+            }
+            return {
+                success: true,
+                code: 200,
+                message: "Token found"
+            }
+        } catch (error) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            }
+        }
+    }
 }
 
-function refresh_tokens_define() {
-    return `CREATE TABLE IF NOT EXISTS refresh_tokens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            token VARCHAR UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`
-}
-
-function refresh_tokens_index() {
-    return `CREATE INDEX IF NOT EXISTS index_refresh_token ON refresh_tokens (token);`
-}
-
-function refresh_tokens_check(db, token) {
-    const stmt = db.prepare('SELECT * FROM refresh_tokens WHERE  token = ?');
-    const result = stmt.get(token);
-    return !!result;
-}
-
-function refresh_tokens_create(db, token) {
-    const stmt = db.prepare('INSERT INTO refresh_tokens (token) VALUES (?)');
-    const result = stmt.run(token);
-    return result.lastInsertRowid;
-}
-
-function refresh_tokens_delete(db, token) {
-    const stmt = db.prepare('DELETE FROM refresh_tokens WHERE token = ?');
-    const result = stmt.run(token);
-    return result.changes;
-}
-
-module.exports = {
-    setup_refresh_tokens_table,
-    refresh_tokens_check,
-    refresh_tokens_create,
-    refresh_tokens_delete,
-}
+module.exports = RefreshTokenRepo
