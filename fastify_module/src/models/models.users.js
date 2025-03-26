@@ -5,78 +5,166 @@
 // password -> VARCHAR 100 (hashed)
 // wins -> INTEGER
 // loses -> INTEGERT
-// status -> BOOL for status (might change to redis or websocket ??)
 // created_at -> TIMESTAMP
 
+const AppDataSource = require('./models.init.js')
 
-// resources:
-// https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#class-statement
 
-function setup_user_table(app) {
-    app.after(() => {
-        app.db.prepare(user_define()).run();
-        app.db.prepare(user_name_index()).run();
-        app.db.prepare(user_email_index()).run();
-    });
+const UserRepository = {
+
+    // Create a new user
+    async user_create(userData) {
+        try {
+            const repo = AppDataSource.getRepository("User")
+            const hashedPassword = await bcrypt.hash(userData.password, 10)
+
+            const newUser = repo.create({
+                ...userData,
+                password: hashedPassword
+            })
+
+            await repo.save(newUser)
+            return {
+                success: true,
+                code: 201,
+                user: newUser
+            }
+
+        } catch (err) {
+            return {
+                success: false,
+                code: err.message.includes("UNIQUE")
+                    ? 409
+                    : 500,
+                error: err.message.includes("UNIQUE")
+                    ? "Duplicated resource"
+                    : err.message
+            };
+        }
+    },
+
+    // Delete a user by ID
+    async user_delete(userId) {
+        try {
+            const repo = AppDataSource.getRepository("User");
+            const result = await repo.delete(userId);
+            return {
+                success: result.affected > 0,
+                code: result.affected > 0
+                    ? 204
+                    : 404,
+                message: result.affected > 0
+                    ? "User deleted successfully"
+                    : "User not found"
+            }
+
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                error: err.message
+            }
+        }
+    },
+
+    // Fetch a single user by ID
+    async user_fetch(userId) {
+        try {
+            const repo = AppDataSource.getRepository("User");
+            const user = await repo.findOne({ where: { id: userId } });
+
+            if (!user) return {
+                success: false,
+                code: 404,
+                error: "User not found"
+            }
+
+            const { password, ...user_no_password } = user;
+            return {
+                success: true,
+                code: 200,
+                user: user_no_password
+            }
+
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                error: err.message
+            }
+        }
+    },
+
+    // Update user information
+    async user_update(userId, updateData) {
+        try {
+            const repo = AppDataSource.getRepository("User")
+
+            // Hash new password if provided
+            if (updateData.password) 
+                updateData.password = await bcrypt.hash(updateData.password, 10)
+
+            await repo.update(userId, updateData)
+            const updatedUser = await repo.findOne({ where: { id: userId } })
+
+            if (!updatedUser)
+                return {
+                    success: false,
+                    code: 404,
+                    error: "User not found"
+                }
+
+            const { password, ...user_no_password } = updatedUser
+
+            return {
+                success: true,
+                code: 200,
+                user: user_no_password
+            }
+
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                error: err.message
+            }
+        }
+    },
+
+    // Get all users (paginated)
+    async user_all(page = 1, limit = 10) {
+        try {
+            const repo = AppDataSource.getRepository("User");
+            const [users, total] = await repo.findAndCount({
+                skip: (page - 1) * limit,
+                take: limit,
+                order: { created_at: "DESC" }
+            })
+
+            // Remove passwords from all users
+            const sanitizedUsers = users.map(user => {
+                const { password, ...rest } = user
+                return rest
+            })
+
+            return {
+                success: true,
+                code: 200,
+                users: sanitizedUsers,
+                total,
+                page,
+                totalPages: Math.ceil(total / limit)
+            }
+
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                error: err.message
+            }
+        }
+    }
 }
 
-function user_define() {
-    return `CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(100) UNIQUE NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password VARCHAR(100) NOT NULL,
-            wins INTEGER DEFAULT 0,
-            loses INTEGER DEFAULT 0,
-            status BOOL DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`
-}
-
-function user_email_index() {
-    return `CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);`
-}
-
-function user_name_index() {
-    return `CREATE INDEX IF NOT EXISTS idx_users_name ON users (name);`
-}
-
-function user_all(db) {
-    const stmt = db.prepare('SELECT * from users')
-    const result = stmt.all()
-    return result; // Return the ID of the newly added user
-}
-
-function user_fetch(db, id) {
-    const stmt = db.prepare('SELECT * FROM users WHERE id = ?')
-    const result = stmt.get(id)
-    return result; // Return the user object or undefined if not found
-}
-
-function user_create(db, name, email, password) {
-    const stmt = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)')
-    const result = stmt.run(name, email, password)
-    return result.lastInsertRowid // Return the ID of the newly added user
-}
-
-function user_delete(db, id) {
-    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-    const result = stmt.run(id);
-    return result.changes; // Return the number of rows deleted
-}
-
-function user_update(db, id, name, email, password) {
-    const stmt = db.prepare('UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?');
-    const result = stmt.run(name, email, password, id);
-    return result.changes; // Return the number of rows updated
-}
-
-
-module.exports = {
-    setup_user_table,
-    user_create,
-    user_delete,
-    user_fetch,
-    user_update,
-    user_all,
-}
+module.exports = UserRepository
 
