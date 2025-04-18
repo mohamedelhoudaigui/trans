@@ -2,9 +2,8 @@ const fastify = require('fastify')({ logger: true })
 require('dotenv').config()
 
 const UserRoutes = require('./routes/routes.users')
-const { auth_routes } = require('./routes/routes.auth')
-const { friendship_routes } = require('./routes/routes.friendships')
-const { shutdown_handler } = require('./utils/utils.server')
+const AuthRoutes = require('./routes/routes.auth')
+
 
 // Plugins:
 fastify.register(require('./plugins/plugins.db'));
@@ -13,11 +12,19 @@ fastify.register(require('@fastify/jwt'), { secret: process.env.JWT_KEY });
 
 // Routes:
 fastify.register(UserRoutes, { prefix: '/api/users' })
-fastify.register(auth_routes, { prefix: '/api/auth' })
-fastify.register(friendship_routes, { prefix: '/api/friend' })
+fastify.register(AuthRoutes, { prefix: '/api/auth' })
+// fastify.register(friendship_routes, { prefix: '/api/friend' })
 
 // Utility:
-shutdown_handler(fastify)
+
+const listeners = ['SIGINT', 'SIGTERM']
+listeners.forEach((signal) => {
+    process.on(signal, async () => {
+        fastify.log.info('shuting down server...')
+        await fastify.close()
+        process.exit(0)
+    })
+})
 
 async function start() {
 

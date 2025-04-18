@@ -60,12 +60,58 @@ const RefreshToken = new EntitySchema({
     },
 })
 
+const Friendship = new EntitySchema({
+    name: "Friendship",
+    tableName: "friendships",
+    columns: {
+        user_id: {
+            primary: true,
+            nullable: false,
+            type: "integer",
+        },
+
+        friend_id: {
+            primary: true,
+            nullable: false,
+            type: "integer",
+        },
+
+        created_at: {
+            type: "datetime",
+            default: () => "CURRENT_TIMESTAMP"
+        }
+    },
+
+    relations: {
+        user: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: {
+                name: "user_id",
+                referencedColumnName: "id"
+            },
+            inverseSide: "friends",
+            onDelete: "CASCADE"
+        },
+
+        friend: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: {
+                name: "friend_id",
+                referencedColumnName: "id"
+            },
+            onDelete: "CASCADE"
+        }
+    }
+})
+
 const AppDataSource = new DataSource({
     type: "sqlite",
     database: process.env.DB_PATH,
     synchronize: true,
     logging: false,
-    entities: [User, RefreshToken],
+    entities: [User, RefreshToken, Friendship],
 });
 
 module.exports = AppDataSource

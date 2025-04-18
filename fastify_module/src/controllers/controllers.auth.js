@@ -1,70 +1,50 @@
-const { send_response } = require('../utils/utils.req_res')
-const { verify_password, gen_jwt_token } = require('../utils/utils.security')
 const RefreshTokenRepo = require('../models/models.refresh_tokens')
+const UserRepo = require('../models/models.users')
+const { gen_jwt_token } = require('../utils/utils.security')
 require('dotenv').config()
 
-async function Login(request, reply)
-{
-    try {
+const AuthCtl = {
+
+    async Login (request, reply) {
         const { email, password } = request.body
-        if (!email || !password)
-            return send_response(reply, 400, "email and password are required")
+        const res = UserRepo.user_login(email, password)
 
-        const valid = await verify_password(this.db, email, password)
-        if (!valid)
-            return send_response(reply, 401, "invalid user credentials")
+        if (!res.success)
+        {
+            reply.status(res.code).send(res)
+            return ;
+        }
 
-        const access_token = gen_jwt_token(this, email, process.env.ACCESS_TOKEN_EXPIRE || '15m')
-        const refresh_token = gen_jwt_token(this, email, process.env.REFRESH_TOKEN_EXPIRE || '15d')
+        const access_token = gen_jwt_token(this, { email }, process.env.ACCESS_TOKEN_EXPIRE)
+        const refresh_token = gen_jwt_token(this, { email }, process.env.REFRESH_TOKEN_EXPIRE)
+        RefreshTokenRepo.refresh_tokens_create(refresh_token)
 
-        refresh_tokens_create(this.db, refresh_token)
+        reply.status(res.code).send({ access_token, refresh_token })
+    },
 
-        return send_response(reply, 200, { access_token, refresh_token })
-
-    } catch (err) {
-        return send_response(reply, 500, err)
-    }
-}
-
-async function Refresh(request, reply) {
-    try {
+    async Refresh(request, reply) {
         const { refresh_token } = request.body
-        if (!refresh_token)
-            return send_response(reply, 400, "refresh token required")
-
         const decoded_token = this.jwt.verify(refresh_token)
-        if (!refresh_tokens_check(this.db, refresh_token))
-            send_response(reply, 403, 'invalid refresh token')
+        const res = RefreshTokenRepo.refresh_tokens_check(refresh_token)
+
+        if (!res.success)
+        {
+            reply.status(res.code).send(res)
+            return ;
+        }
 
         const new_access_token = gen_jwt_token(this, decoded_token.email, process.env.ACCESS_TOKEN_EXPIRE)
+        reply.status(res.code).send({ new_access_token })
+    },
 
-        return send_response(reply, 200, new_access_token)
-
-    } catch (err) {
-         if (err instanceof jwt.TokenExpiredError) {
-            await refresh_tokens_delete(this.db, refresh_token);
-            return send_response(reply, 403, 'refresh token expired');
-        }
-        return send_response(reply, 500, err.message);
-    }
-}
-
-async function Logout(request, reply) {
-    try {
+    async Logout(request, reply) {
         const { refresh_token } = request.body;
-        if (!refresh_token)
-            return send_response(reply, 400, "refresh token required");
-
-        await refresh_tokens_delete(this.db, refresh_token);
-        return send_response(reply, 200, "Successfully logged out");
-
-    } catch (err) {
-        return send_response(reply, 500, err.message);
+        const res = refresh_tokens_delete(refresh_token);
+        reply.status(res.code).send(res)
     }
+
 }
 
-module.exports = {
-    Login,
-    Refresh,
-    Logout
-}
+
+
+module.exports = AuthCtl

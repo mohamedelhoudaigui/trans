@@ -1,12 +1,10 @@
-const { Login, Refresh, Logout } = require('../controllers/controllers.auth')
+const AuthCtl = require('../controllers/controllers.auth')
 
-async function auth_routes(fastify)
+async function AuthRoutes(fastify)
 {
-    fastify.post('/login', Login)
-    fastify.post('/refresh', Refresh)
-    fastify.post('/logout', Logout)
+    fastify.post('/login', AuthCtl.Login)
+    fastify.post('/refresh', AuthCtl.Refresh)
+    fastify.post('/logout', AuthCtl.Logout)
 }
 
-module.exports = {
-    auth_routes,
-}
+module.exports = AuthRoutes

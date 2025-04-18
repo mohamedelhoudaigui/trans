@@ -28,7 +28,7 @@ const RefreshTokenRepo = {
                 message: err.message
             }
         }
-    }
+    },
 
     async refresh_tokens_delete(token) {
         try {
@@ -48,7 +48,7 @@ const RefreshTokenRepo = {
                 message: err.message
             }
         }
-    }
+    },
 
     async refresh_tokens_check(token) {
         try {

@@ -1,5 +1,3 @@
-const { send_response } = require('../utils/utils.req_res')
-const { add_friend, remove_friend, get_friends, check_friendship } = require('../models/models.friendships')
 
 async function RemoveFriend(request, reply)
 {

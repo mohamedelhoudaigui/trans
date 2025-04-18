@@ -1,5 +1,4 @@
 const fp = require('fastify-plugin');
-const { send_response } = require('../utils/utils.req_res')
 
 async function authPlugin(fastify, options) {
 
@@ -7,7 +6,7 @@ async function authPlugin(fastify, options) {
         try {
             await request.jwtVerify()
         } catch (err) {
-            send_response(reply, 401, err)
+            reply.status(401).send(err.message)
         }
     })
 }

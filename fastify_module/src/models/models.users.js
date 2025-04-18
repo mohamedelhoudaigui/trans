@@ -8,10 +8,10 @@
 // created_at -> TIMESTAMP
 
 const AppDataSource = require('./models.init.js')
+const bcrypt = require('bcrypt')
 
 const UserRepo = {
 
-    // Create a new user
     async user_create(userData) {
         try {
             const repo = AppDataSource.getRepository("User")
@@ -42,7 +42,6 @@ const UserRepo = {
         }
     },
 
-    // Delete a user by ID
     async user_delete(userId) {
         try {
             const repo = AppDataSource.getRepository("User")
@@ -66,7 +65,6 @@ const UserRepo = {
         }
     },
 
-    // Fetch a single user by ID
     async user_fetch(userId) {
         try {
             const repo = AppDataSource.getRepository("User")
@@ -94,7 +92,41 @@ const UserRepo = {
         }
     },
 
-    // Update user information
+    async user_login(userEmail, userPassword) {
+        try {
+            const repo = AppDataSource.getRepository("User")
+            const user = await repo.findOne({ where: { email: userEmail } })
+
+            // user not found
+            if (!user) return {
+                success: false,
+                code: 404,
+                error: "User not found"
+            }
+            
+            // password mismatch
+            const isMatch = await bcrypt.compare(userPassword, user.password);
+            if (!isMatch) return {
+                success: false,
+                code: 404,
+                error: "Wrong user creds"
+            }
+
+            return {
+                success: true,
+                code: 200,
+                user: user
+            }
+
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                error: err.message
+            }
+        }
+    },
+
     async user_update(userId, updateData) {
         try {
             const repo = AppDataSource.getRepository("User")
@@ -130,7 +162,6 @@ const UserRepo = {
         }
     },
 
-    // Get all users (paginated)
     async user_all(page = 1, limit = 10) {
         try {
             const repo = AppDataSource.getRepository("User");
@@ -166,4 +197,3 @@ const UserRepo = {
 }
 
 module.exports = UserRepo
-

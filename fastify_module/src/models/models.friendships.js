@@ -1,69 +1,146 @@
 // friendships fields :
-// id -> PRIMARY KEY
 // user_id -> FOREIGN KEY
 // friend_id -> FOREIGN KEY
 // created_at -> DATE
 
+const AppDataSource = require('./models.init.js');
 
-function setup_friendships_table(app) {
-    app.after(() => {
-        app.db.prepare(friendships_define()).run();
-    });
-}
+const FriendshipRepo = {
 
-function friendships_define() {
-    return `CREATE TABLE IF NOT EXISTS friendships (
-            user_id INTEGER NOT NULL,
-            friend_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (user_id, friend_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE);`
-}
+    async addFriend(userId, friendId) {
+        try {
+            const friendshipRepo = AppDataSource.getRepository("Friendship");
+            const newFriendship = friendshipRepo.create({
+                user_id: userId,
+                friend_id: friendId
+            });
+            await friendshipRepo.save(newFriendship);
+            return {
+                success: true,
+                code: 201,
+                message: "Friendship created successfully"
+            };
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            };
+        }
+    },
 
-function add_friend(db, user_id, friend_id) {
-    const stmt = db.prepare('INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)');
-    const result = stmt.run(user_id, friend_id);
-    return result.changes;
-}
+    // Remove a friend relationship
+    async removeFriend(userId, friendId) {
+        try {
+            const friendshipRepo = AppDataSource.getRepository("Friendship");
+            const result = await friendshipRepo.delete({
+                user_id: userId,
+                friend_id: friendId
+            });
+            
+            return {
+                success: result.affected > 0,
+                code: result.affected > 0 ? 204 : 404,
+                message: result.affected > 0 
+                    ? "Friendship removed successfully" 
+                    : "Friendship not found"
+            };
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            };
+        }
+    },
 
-function remove_friend(db, user_id, friend_id) {
-    const stmt = db.prepare('DELETE FROM friendships WHERE user_id = ? AND friend_id = ?');
-    const result = stmt.run(user_id, friend_id);
-    return result.changes;
-}
+    async checkFriendship(userId, friendId) {
+        try {
+            const friendshipRepo = AppDataSource.getRepository("Friendship");
+            const friendship = await friendshipRepo.findOne({
+                where: [
+                    { user_id: userId, friend_id: friendId },
+                    { user_id: friendId, friend_id: userId }
+                ]
+            });
 
-function check_friendship(db, user_id, friend_id) {
-    const stmt = db.prepare(`
-        SELECT * FROM friendships 
-        WHERE (user_id = ? AND friend_id = ?)
-        OR (user_id = ? AND friend_id = ?)
-    `)
-    const res = stmt.get(user_id, friend_id, friend_id, user_id)
-    return res !== undefined
-}
+            return {
+                success: true,
+                code: 200,
+                exists: !!friendship
+            };
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            };
+        }
+    },
 
-function get_friends(db, user_id) {
-    const stmt = db.prepare(`
-        SELECT u.id, u.name, u.email 
-        FROM users u
-        JOIN friendships f ON u.id = f.friend_id
-        WHERE f.user_id = ?
-        UNION
-        SELECT u.id, u.name, u.email 
-        FROM users u
-        JOIN friendships f ON u.id = f.user_id
-        WHERE f.friend_id = ?
-    `);
-    const result = stmt.all(user_id, user_id);
-    return result; // return the list of friends
-}
+    // Get all friends of a user
+    async getFriends(userId) {
+        try {
+            const userRepo = AppDataSource.getRepository("User");
+            const user = await userRepo.findOne({
+                where: { id: userId },
+                relations: ["friends"]
+            });
 
+            if (!user) {
+                return {
+                    success: false,
+                    code: 404,
+                    message: "User not found"
+                };
+            }
 
-module.exports = {
-	setup_friendships_table,
-	add_friend,
-	remove_friend,
-	get_friends,
-    check_friendship,
-}
+            // Get both sides of friendships (where user is either user_id or friend_id)
+            const friendshipRepo = AppDataSource.getRepository("Friendship");
+
+            const friendshipsAsUser = await friendshipRepo.find({
+                where: { user_id: userId },
+                relations: ["friend"]
+            });
+
+            const friendshipsAsFriend = await friendshipRepo.find({
+                where: { friend_id: userId },
+                relations: ["user"]
+            });
+
+            // Combine and format the results
+            const friends = [
+                ...friendshipsAsUser.map(f => ({
+                    id: f.friend.id,
+                    name: f.friend.name,
+                    email: f.friend.email
+                })),
+
+                ...friendshipsAsFriend.map(f => ({
+                    id: f.user.id,
+                    name: f.user.name,
+                    email: f.user.email
+                }))
+            ];
+
+            // Remove duplicates (in case of bidirectional friendship records)
+            const uniqueFriends = friends.filter((friend, index, self) =>
+                index === self.findIndex(f => f.id === friend.id)
+            );
+
+            return {
+                success: true,
+                code: 200,
+                friends: uniqueFriends
+            };
+        } catch (err) {
+            return {
+                success: false,
+                code: 500,
+                message: err.message
+            };
+        }
+    }
+};
+
+module.exports = FriendshipRepo;
