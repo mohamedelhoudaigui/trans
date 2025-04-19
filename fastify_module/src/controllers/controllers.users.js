@@ -1,5 +1,4 @@
 const UserRepo = require('../models/models.users');
-const { hash_password } = require('../utils/utils.security')
 
 const UserCtrl = {
 

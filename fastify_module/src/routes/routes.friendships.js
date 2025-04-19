@@ -1,12 +1,10 @@
-const { AddFriend, RemoveFriend, GetFriends } = require('../controllers/controllers.friendships')
+const FriendshipCtrl = require('../controllers/controllers.friendships')
 
-function friendship_routes(fastify)
+function FriendshipRoutes(fastify)
 {
-	fastify.get('/:id', { onRequest: [fastify.auth] }, GetFriends)
-    fastify.post('/', {onRequest: [fastify.auth] }, AddFriend)
-    fastify.delete('/', {onRequest: [fastify.auth] }, RemoveFriend)
+	fastify.get('/:id', { onRequest: [fastify.auth] }, FriendshipCtrl.GetFriends)
+    fastify.post('/', {onRequest: [fastify.auth] }, FriendshipCtrl.AddFriend)
+    fastify.delete('/', {onRequest: [fastify.auth] }, FriendshipCtrl.RemoveFriend)
 }
 
-module.exports = {
-	friendship_routes,
-}
+module.exports = FriendshipRoutes

@@ -3,6 +3,7 @@ require('dotenv').config()
 
 const UserRoutes = require('./routes/routes.users')
 const AuthRoutes = require('./routes/routes.auth')
+const FriendshipRoutes = require('./routes/routes.friendships')
 
 
 // Plugins:
@@ -13,7 +14,7 @@ fastify.register(require('@fastify/jwt'), { secret: process.env.JWT_KEY });
 // Routes:
 fastify.register(UserRoutes, { prefix: '/api/users' })
 fastify.register(AuthRoutes, { prefix: '/api/auth' })
-// fastify.register(friendship_routes, { prefix: '/api/friend' })
+fastify.register(FriendshipRoutes, { prefix: '/api/friend' })
 
 // Utility:
 
