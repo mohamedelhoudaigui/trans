@@ -5,7 +5,8 @@ require('dotenv').config()
 
 const AuthCtl = {
 
-    async Login (request, reply) {
+    async Login (request, reply)
+    {
         const { email, password } = request.body
         const res = UserRepo.user_login(email, password)
 
@@ -22,7 +23,8 @@ const AuthCtl = {
         reply.status(res.code).send({ access_token, refresh_token })
     },
 
-    async Refresh(request, reply) {
+    async Refresh(request, reply)
+    {
         const { refresh_token } = request.body
         const decoded_token = this.jwt.verify(refresh_token)
         const res = RefreshTokenRepo.refresh_tokens_check(refresh_token)
@@ -37,14 +39,13 @@ const AuthCtl = {
         reply.status(res.code).send({ new_access_token })
     },
 
-    async Logout(request, reply) {
+    async Logout(request, reply)
+    {
         const { refresh_token } = request.body;
         const res = refresh_tokens_delete(refresh_token);
         reply.status(res.code).send(res)
     }
 
 }
-
-
 
 module.exports = AuthCtl

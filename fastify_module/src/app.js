@@ -16,8 +16,7 @@ fastify.register(UserRoutes, { prefix: '/api/users' })
 fastify.register(AuthRoutes, { prefix: '/api/auth' })
 fastify.register(FriendshipRoutes, { prefix: '/api/friend' })
 
-// Utility:
-
+// Server shutdown handler:
 const listeners = ['SIGINT', 'SIGTERM']
 listeners.forEach((signal) => {
     process.on(signal, async () => {
@@ -30,7 +29,7 @@ listeners.forEach((signal) => {
 async function start() {
 
     try {
-        await fastify.listen({ port: process.env.PORT || 3000 });
+        fastify.listen({ port: process.env.PORT || 3000 });
         fastify.log.info(`Server listening ${fastify.server.address().port}`);
     }
     catch(err)

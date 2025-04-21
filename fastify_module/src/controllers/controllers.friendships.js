@@ -11,9 +11,9 @@ const FriendshipCtrl = {
 
 	async AddFriend(request, reply)
 	{
-			const { user_id, friend_id } = request.body
-			const res = await FriendshipRepo.addFriend(this.db, user_id, friend_id)
-			reply.status(res.code).send(res)
+		const { user_id, friend_id } = request.body
+		const res = await FriendshipRepo.addFriend(this.db, user_id, friend_id)
+		reply.status(res.code).send(res)
 	},
 
 	async GetFriends(request, reply) {

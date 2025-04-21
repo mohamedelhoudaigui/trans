@@ -12,7 +12,8 @@ const bcrypt = require('bcrypt')
 
 const UserRepo = {
 
-    async user_create(userData) {
+    async user_create(userData)
+    {
         try {
             const repo = AppDataSource.getRepository("User")
             const hashedPassword = await bcrypt.hash(userData.password, 10)
@@ -29,7 +30,8 @@ const UserRepo = {
                 user: newUser
             }
 
-        } catch (err) {
+        }
+        catch (err) {
             return {
                 success: false,
                 code: err.message.includes("UNIQUE")
@@ -42,7 +44,8 @@ const UserRepo = {
         }
     },
 
-    async user_delete(userId) {
+    async user_delete(userId)
+    {
         try {
             const repo = AppDataSource.getRepository("User")
             const result = await repo.delete(userId)
@@ -56,7 +59,8 @@ const UserRepo = {
                     : "User not found"
             }
 
-        } catch (err) {
+        }
+        catch (err) {
             return {
                 success: false,
                 code: 500,
@@ -65,7 +69,8 @@ const UserRepo = {
         }
     },
 
-    async user_fetch(userId) {
+    async user_fetch(userId)
+    {
         try {
             const repo = AppDataSource.getRepository("User")
             const user = await repo.findOne({ where: { id: userId } })
@@ -83,7 +88,8 @@ const UserRepo = {
                 user: user_no_password
             }
 
-        } catch (err) {
+        }
+        catch (err) {
             return {
                 success: false,
                 code: 500,
@@ -92,7 +98,8 @@ const UserRepo = {
         }
     },
 
-    async user_login(userEmail, userPassword) {
+    async user_login(userEmail, userPassword)
+    {
         try {
             const repo = AppDataSource.getRepository("User")
             const user = await repo.findOne({ where: { email: userEmail } })
@@ -127,7 +134,8 @@ const UserRepo = {
         }
     },
 
-    async user_update(userId, updateData) {
+    async user_update(userId, updateData)
+    {
         try {
             const repo = AppDataSource.getRepository("User")
 
@@ -162,28 +170,20 @@ const UserRepo = {
         }
     },
 
-    async user_all(page = 1, limit = 10) {
+    async user_all()
+    {
         try {
             const repo = AppDataSource.getRepository("User");
             const [users, total] = await repo.findAndCount({
-                skip: (page - 1) * limit,
-                take: limit,
                 order: { created_at: "DESC" }
             })
 
-            // Remove passwords from all users
-            const sanitizedUsers = users.map(user => {
-                const { password, ...rest } = user
-                return rest
-            })
 
             return {
                 success: true,
                 code: 200,
-                users: sanitizedUsers,
-                total,
-                page,
-                totalPages: Math.ceil(total / limit)
+                users: users,
+                total: total,
             }
 
         } catch (err) {
