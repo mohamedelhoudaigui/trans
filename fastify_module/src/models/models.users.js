@@ -9,6 +9,7 @@
 
 const AppDataSource = require('./models.init.js')
 const bcrypt = require('bcrypt')
+const validator = require('validator');
 
 const UserRepo = {
 
@@ -34,12 +35,8 @@ const UserRepo = {
         catch (err) {
             return {
                 success: false,
-                code: err.message.includes("UNIQUE")
-                    ? 409
-                    : 500,
-                error: err.message.includes("UNIQUE")
-                    ? "Duplicated resource"
-                    : err.message
+                code: err.message.includes("UNIQUE") ? 409 : 500,
+                error: err.message.includes("UNIQUE") ? "Duplicated resource" : err.message
             };
         }
     },
@@ -51,12 +48,8 @@ const UserRepo = {
             const result = await repo.delete(userId)
             return {
                 success: result.affected > 0,
-                code: result.affected > 0
-                    ? 204
-                    : 404,
-                message: result.affected > 0
-                    ? "User deleted successfully"
-                    : "User not found"
+                code: result.affected > 0 ? 204 : 404,
+                message: result.affected > 0 ? "User deleted successfully" : "User not found"
             }
 
         }
@@ -110,7 +103,7 @@ const UserRepo = {
                 code: 404,
                 error: "User not found"
             }
-            
+
             // password mismatch
             const isMatch = await bcrypt.compare(userPassword, user.password);
             if (!isMatch) return {

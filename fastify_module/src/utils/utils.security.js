@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt')
+const validator = require('validator');
 
 async function hash_password(password) {
     try {
@@ -21,7 +22,40 @@ function gen_jwt_token(fastify, payload, expire_date)
     return (token)
 }
 
+function check_and_sanitize (UserData)
+{
+    const errors = [];
+
+    // --- NAME (VARCHAR 100) ---
+    if (!UserData.name || !validator.isLength(UserData.name, { min: 8, max: 100 }))
+    {
+        errors.push("Name must be 8-100 characters long")
+    }
+
+    // --- EMAIL (VARCHAR 100) ---
+    if (!UserData.email || !validator.isEmail(UserData.email) || !validator.isLength(UserData.email))
+    {
+        errors.push("Invalid email address")
+    }
+
+    // --- PASSWORD (VARCHAR 100 - hashed) ---
+    if (!UserData.password || !validator.isStrongPassword(UserData.password, {
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1,
+    }))
+    {
+        errors.push(
+            "Password must be at least 8 characters with 1 lowercase, 1 uppercase, 1 number, and 1 symbol."
+        )
+    }
+    return errors
+}
+
 module.exports = {
     hash_password,
     gen_jwt_token,
+    check_and_sanitize,
 }
