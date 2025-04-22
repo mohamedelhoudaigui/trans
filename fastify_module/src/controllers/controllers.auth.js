@@ -8,7 +8,7 @@ const AuthCtl = {
     async Login (request, reply)
     {
         const { email, password } = request.body
-        const res = UserRepo.user_login(email, password)
+        const res = await UserRepo.user_login(email, password)
 
         if (!res.success)
         {
@@ -18,7 +18,7 @@ const AuthCtl = {
 
         const access_token = gen_jwt_token(this, { email }, process.env.ACCESS_TOKEN_EXPIRE)
         const refresh_token = gen_jwt_token(this, { email }, process.env.REFRESH_TOKEN_EXPIRE)
-        RefreshTokenRepo.refresh_tokens_create(refresh_token)
+        await RefreshTokenRepo.refresh_tokens_create(refresh_token)
 
         reply.status(res.code).send({ access_token, refresh_token })
     },
@@ -27,7 +27,7 @@ const AuthCtl = {
     {
         const { refresh_token } = request.body
         const decoded_token = this.jwt.verify(refresh_token)
-        const res = RefreshTokenRepo.refresh_tokens_check(refresh_token)
+        const res = await RefreshTokenRepo.refresh_tokens_check(refresh_token)
 
         if (!res.success)
         {
@@ -42,7 +42,7 @@ const AuthCtl = {
     async Logout(request, reply)
     {
         const { refresh_token } = request.body;
-        const res = refresh_tokens_delete(refresh_token);
+        const res = await refresh_tokens_delete(refresh_token);
         reply.status(res.code).send(res)
     }
 

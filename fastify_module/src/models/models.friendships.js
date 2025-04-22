@@ -29,7 +29,6 @@ const FriendshipRepo = {
         }
     },
 
-    // Remove a friend relationship
     async removeFriend(userId, friendId) {
         try {
             const friendshipRepo = AppDataSource.getRepository("Friendship");
@@ -78,7 +77,6 @@ const FriendshipRepo = {
         }
     },
 
-    // Get all friends of a user
     async getFriends(userId) {
         try {
             const userRepo = AppDataSource.getRepository("User");

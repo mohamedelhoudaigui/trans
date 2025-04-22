@@ -33,6 +33,10 @@ const User = new EntitySchema({
             type: "integer",
             default: 0,
         },
+        avatar: {
+            type: "varchar",
+            length: 100,
+        },
         created_at: {
             type: "datetime",
             default: () => "CURRENT_TIMESTAMP"

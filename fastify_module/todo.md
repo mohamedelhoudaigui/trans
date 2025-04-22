@@ -1,9 +1,5 @@
-every thing seems fine. check subject
+fuck unit tests
 
-make unit tests using ai
-
-sanitize user input in login, registration and update
-
-add pictures somehow ?
+add pictures somehow ? -> not yet
 
 start working on the chat

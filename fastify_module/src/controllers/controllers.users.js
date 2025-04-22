@@ -18,7 +18,7 @@ const UserCtrl = {
 
     async CreateUser (request, reply)
     {
-        const { name, email, password } = request.body;
+        const { name, email, password, avatar } = request.body;
         // sanitize data :
         const errors = check_and_sanitize({ name, email, password })
         if (errors.length > 0)
@@ -32,14 +32,14 @@ const UserCtrl = {
             );
         }
 
-        const res = await UserRepo.user_create({name, email, password})
+        const res = await UserRepo.user_create({name, email, password, avatar})
         reply.status(res.code).send(res)
     },
 
     async UpdateUser (request, reply)
     {
         const id = request.params.id
-        const { name, email, password } = request.body;
+        const { name, email, password, avatar } = request.body;
         // sanitize data :
         const errors = check_and_sanitize({ name, email, password })
         if (errors.length > 0)
@@ -53,7 +53,7 @@ const UserCtrl = {
             );
         }
 
-        const res = await UserRepo.user_update(id, { name, email, password })
+        const res = await UserRepo.user_update(id, { name, email, password, avatar })
         reply.status(res.code).send(res)
     },
 
