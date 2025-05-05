@@ -5,158 +5,62 @@
 // password -> VARCHAR 100 (hashed)
 // wins -> INTEGER
 // loses -> INTEGERT
+// avatar -> varchar 300
 // created_at -> TIMESTAMP
-
-const AppDataSource = require('./models.init.js')
 const bcrypt = require('bcrypt')
 
-const UserRepo = {
 
-    async user_create(userData)
+const UserModel = {
+
+    users_init()
     {
-        try
-         {
-            const repo = AppDataSource.getRepository("User")
-
-            const hashedPassword = await bcrypt.hash(userData.password, 10)
-            userData.password = hashedPassword;
-
-            const newUser = repo.create(userData)
-            await repo.save(newUser)
-
-            const {password, ...user_no_password} = newUser
-
-            return {
-                success: true,
-                code: 201,
-                user: user_no_password
-            }
-
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: err.message.includes("UNIQUE") ? 409 : 500,
-                error: err.message.includes("UNIQUE") ? "Duplicated resource" : err.message
-            };
-        }
+        return `CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(100) NOT NULL,
+            wins INTEGER DEFAULT 0,
+            loses INTEGER DEFAULT 0,
+            avatar VARCHAR(300),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`
     },
 
-    async user_delete(userId)
+    users_index_email()
     {
-        try
-        {
-            const repo = AppDataSource.getRepository("User")
-
-            const result = await repo.delete(userId)
-            return {
-                success: result.affected > 0,
-                code: result.affected > 0 ? 204 : 404,
-                message: result.affected > 0 ? "User deleted successfully" : "User not found"
-            }
-
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                error: err.message
-            }
-        }
+        return `CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);`
     },
+
+    users_index_name()
+    {
+        return `CREATE INDEX IF NOT EXISTS idx_users_name ON users (name);`
+    },
+
 
     async user_fetch(userId)
     {
         try
         {
-            const repo = AppDataSource.getRepository("User")
-
-            const user = await repo.findOne({ where: { id: userId } })
-            if (!user) return {
-                success: false,
-                code: 404,
-                error: "User not found"
-            }
-
-            const { password, ...user_no_password } = user;
-            return {
-                success: true,
-                code: 200,
-                user: user_no_password
-            }
-
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                error: err.message
-            }
-        }
-    },
-
-    async user_login(userEmail, userPassword)
-    {
-        try
-        {
-            const repo = AppDataSource.getRepository("User")
-
-            const user = await repo.findOne({ where: { email: userEmail } })
-            if (!user)
+            const stmt = db.prepare(`
+                SELECT *
+                FROM users
+                WHERE id = ?
+            `)
+            const result = stmt.get(userId)
+            if (result === undefined)
             {
                 return {
                     success: false,
                     code: 404,
-                    error: "User not found"
+                    result: "user not found"
                 }
             }
 
-            const isMatch = await bcrypt.compare(userPassword, user.password);
-            if (!isMatch)
-            {
-                return {
-                    success: false,
-                    code: 404,
-                    error: "Wrong user creds"
-                }
-            }
-
+            const { password, ...user_no_password } = result;
             return {
                 success: true,
                 code: 200,
-                user: user
-            }
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                error: err.message
-            }
-        }
-    },
-
-    async user_update(userId, updateData)
-    {
-        try
-        {
-            const repo = AppDataSource.getRepository("User")
-
-            if (updateData.password) 
-                updateData.password = await bcrypt.hash(updateData.password, 10)
-
-            await repo.update(userId, updateData)
-
-            const { password, ...user_no_password } = updatedUser
-
-            return {
-                success: true,
-                code: 200,
-                user: user_no_password
+                result: user_no_password
             }
 
         }
@@ -165,7 +69,7 @@ const UserRepo = {
             return {
                 success: false,
                 code: 500,
-                error: err.message
+                result: err.message
             }
         }
     },
@@ -174,15 +78,15 @@ const UserRepo = {
     {
         try
         {
-            const repo = AppDataSource.getRepository("User");
-            const users = await repo.findAndCount({
-                order: { created_at: "DESC" }
-            })
-
+            const stmt = db.prepare(`
+                SELECT id, name, email, wins, loses, avatar, created_at
+                FROM users
+            `)
+            const result = stmt.all()
             return {
                 success: true,
                 code: 200,
-                users: users,
+                result: result
             }
         }
         catch (err)
@@ -190,10 +94,115 @@ const UserRepo = {
             return {
                 success: false,
                 code: 500,
-                error: err.message
+                result: err.message
+            }
+        }
+    },
+
+    async user_create(name, email, password, avatar)
+    {
+        try
+        {
+            const hashedPassword = await bcrypt.hash(password, 10)
+            const stmt = db.prepare(`
+                INSERT
+                INTO users (name, email, password, avatar)
+                VALUES (?, ?, ?, ?)
+            `)
+            const result = stmt.run(name, email, hashedPassword, avatar)
+            if (result.changes === 0)
+            {
+                return {
+                    success: false,
+                    code: 400,
+                    result: "user creation failed"
+                }
+            }
+            return {
+                success: true,
+                code: 201,
+                result: result.changes
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
+    },
+
+    async user_delete(user_id)
+    {
+        try
+        {
+            const stmt = db.prepare(`
+                DELETE
+                FROM users
+                WHERE id = ?
+            `)
+            const result = stmt.run(user_id);
+            if (result.changes === 0)
+            {
+                return {
+                    success: false,
+                    code: 404,
+                    result: "user not found"
+                }
+            }
+            return {
+                success: true,
+                code: 200,
+                result: result.changes
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
+    },
+
+    async user_update(user_id, name, email, password, avatar)
+    {
+        try
+        {
+            const hashedPassword = await bcrypt.hash(password, 10)
+            const stmt = db.prepare(`
+                UPDATE users
+                SET name = ?, email = ?, password = ?, avatar = ?
+                WHERE id = ?
+            `);
+            const result = stmt.run(name, email, hashedPassword, avatar, user_id);
+            if (result.changes === 0)
+            {
+                return {
+                    success: false,
+                    code: 400,
+                    result: "user update failed"
+                }
+            }
+
+            return {
+                success: true,
+                code: 200,
+                result: result.changes
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
             }
         }
     }
 }
 
-module.exports = UserRepo
+module.exports = UserModel

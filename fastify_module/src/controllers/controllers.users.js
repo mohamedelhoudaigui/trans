@@ -19,7 +19,6 @@ const UserCtrl = {
     async CreateUser (request, reply)
     {
         const { name, email, password, avatar } = request.body;
-        // sanitize data :
         const errors = check_and_sanitize({ name, email, password })
         if (errors.length > 0)
         {

@@ -1,11 +1,17 @@
 const fp = require('fastify-plugin');
-const AppDataSource = require('../models/models.init.js')
+const Database = require('better-sqlite3');
+
 
 function dbPlugin(fastify, options) {
-    AppDataSource.initialize()
-        .then(() => console.log("Database connected!"))
-        .catch(err => console.error("Database connection error:", err));
-    fastify.decorate('db', AppDataSource);
+
+    const db = new Database('database.db');
+
+    fastify.decorate('db', db);
+
+    fastify.addHook('onClose', (instance, done) => {
+        instance.db.close();
+        done();
+    });
 }
 
 module.exports = fp(dbPlugin)

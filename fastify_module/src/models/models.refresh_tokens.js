@@ -3,75 +3,129 @@
 // token -> VARCHAR
 // created_at  -> DATE
 
-const AppDataSource = require('./models.init.js')
+const RefreshtokenModel = {
 
-const RefreshTokenRepo = {
+    refresh_tokens_init()
+    {
+        return `CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                token VARCHAR UNIQUE NOT NULL,
+                expires_at TIMESTAMP NOT NULL DEFAULT (DATETIME(CURRENT_TIMESTAMP, '+7 DAYS')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );`
+    },
 
-    async refresh_tokens_create(token) {
+    refresh_tokens_user_index()
+    {
+        return `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);`;
+    },
+    
+    refresh_tokens_token_index()
+    {
+        return `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens (token);`
+    },
+    
+    async refresh_tokens_check_by_token(user_id, token)
+    {
+        try
+        {
+            const stmt = db.prepare(`
+                SELECT *
+                FROM refresh_tokens
+                WHERE user_id = ?
+                AND
+                token = ?
+                AND
+                expires_at > CURRENT_TIMESTAMP
+            `)
 
-        try {
-            const repo = AppDataSource.getRepository("RefreshToken")
-            const newToken = repo.create({
-                token: token
-            })
-            await repo.save(newToken)
+            const res = await stmt.get(user_id, token);
+            if (res === undefined)
+            {
+                return {
+                    success: false,
+                    code: 404,
+                    result: "invalid or expired token"
+                }
+            }
+
             return {
                 success: true,
                 code: 200,
-                message: "Token added to database"
+                result: res
             }
         }
-        catch (err) {
+        catch (err)
+        {
             return {
                 success: false,
                 code: 500,
-                message: err.message
+                result: err.message
             }
         }
     },
-
-    async refresh_tokens_delete(token) {
-        try {
-            const repo = AppDataSource.getRepository("RefreshToken")
-            const result = await repo.delete({ token: token })
-
+    
+    async refresh_tokens_create(user_id, token)
+    {
+        try
+        {
+            const stmt = db.prepare(`
+                INSERT
+                INTO refresh_tokens (user_id, token)
+                VALUES (?, ?)
+            `)
+            const res = await stmt.run(user_id, token);
             return {
                 success: true,
-                code: 204,
-                message: "Token deleted from database"
+                code: 200,
+                result: res.changes
             }
         }
-        catch(err) {
+        catch (err)
+        {
             return {
                 success: false,
                 code: 500,
-                message: err.message
+                result: err.message
             }
         }
     },
-
-    async refresh_tokens_check(token) {
-        try {
-            const repo = AppDataSource.getRepository("RefreshToken")
-            const token = await repo.findOne({ where: { token: token } })
-            if (!token) return {
-                success: true,
-                code: 404,
-                message: "Token not found",
+    
+    async refresh_tokens_delete(token)
+    {
+        try
+        {
+            const stmt = db.prepare(`
+                DELETE
+                FROM refresh_tokens
+                WHERE token = ?
+            `)
+            const res = await stmt.run(token);
+            if (res.changes === 0)
+            {
+                return {
+                    success: false,
+                    code: 404,
+                    result: "invalid refresh token"
+                }
             }
             return {
                 success: true,
                 code: 200,
-                message: "Token found"
+                result: res.changes
             }
-        } catch (error) {
+        }
+        catch (err)
+        {
             return {
                 success: false,
                 code: 500,
-                message: err.message
+                result: err.message
             }
         }
     }
 }
 
-module.exports = RefreshTokenRepo
+module.exports = RefreshtokenModel
