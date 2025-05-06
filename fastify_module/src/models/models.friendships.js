@@ -16,7 +16,7 @@ const FriendshipModel = {
                 FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE);`
     },
 
-    async add_friend(user_id, friend_id)
+    async add_friend(db, user_id, friend_id)
     {
         try
         {
@@ -50,7 +50,7 @@ const FriendshipModel = {
         }
     },
     
-    async remove_friend(user_id, friend_id)
+    async remove_friend(db, user_id, friend_id)
     {
         try
         {
@@ -87,7 +87,7 @@ const FriendshipModel = {
         }
     },
     
-    async check_friendship(user_id, friend_id)
+    async check_friendship(db, user_id, friend_id)
     {
         try
         {
@@ -123,7 +123,7 @@ const FriendshipModel = {
         }
     },
     
-    async get_friends(user_id)
+    async get_friends(db, user_id)
     {
         try
         {

@@ -37,7 +37,7 @@ const UserModel = {
     },
 
 
-    async user_fetch(userId)
+    async user_fetch(db, userId)
     {
         try
         {
@@ -74,7 +74,7 @@ const UserModel = {
         }
     },
 
-    async user_all()
+    async user_all(db)
     {
         try
         {
@@ -99,7 +99,7 @@ const UserModel = {
         }
     },
 
-    async user_create(name, email, password, avatar)
+    async user_create(db, name, email, password, avatar)
     {
         try
         {
@@ -120,12 +120,20 @@ const UserModel = {
             }
             return {
                 success: true,
-                code: 201,
+                code: 200,
                 result: result.changes
             }
         }
         catch (err)
         {
+            if (err.code === 'SQLITE_CONSTRAINT_UNIQUE')
+            {
+                return {
+                    success: false,
+                    code: 409,
+                    result: "unique constraine violation"
+                  }
+            }
             return {
                 success: false,
                 code: 500,
@@ -134,7 +142,7 @@ const UserModel = {
         }
     },
 
-    async user_delete(user_id)
+    async user_delete(db, user_id)
     {
         try
         {
@@ -168,7 +176,7 @@ const UserModel = {
         }
     },
 
-    async user_update(user_id, name, email, password, avatar)
+    async user_update(db, user_id, name, email, password, avatar)
     {
         try
         {

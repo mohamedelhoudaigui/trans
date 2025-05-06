@@ -6,11 +6,12 @@ function UserRoutes(fastify)
         schema: {
             body: {
                 type: 'object',
-                required: ['name', 'email', 'password'],
+                required: ['name', 'email', 'password', 'avatar'],
                 properties: {
                     name: { type: 'string' },
                     email: { type: 'string' },
-                    password: { type: 'string' }
+                    password: { type: 'string' },
+                    avatar: { type: 'string' }
                 }
             }
         }
@@ -18,14 +19,15 @@ function UserRoutes(fastify)
     }, UserCtrl.CreateUser)
 
     fastify.put('/:id', {
-        onRequest: [fastify.auth],
+        // onRequest: [fastify.auth],
         schema: {
             body: {
                 type: 'object',
                 properties: {
                     name: { type: 'string' },
                     email: { type: 'string' },
-                    password: { type: 'string' }
+                    password: { type: 'string' },
+                    avatar: { type: 'string' }
                 }
             }
         }
@@ -33,8 +35,14 @@ function UserRoutes(fastify)
     }, UserCtrl.UpdateUser)
 
     fastify.get('/', UserCtrl.GetAllUsers)
-    fastify.get('/:id', { onRequest: [fastify.auth] }, UserCtrl.GetUserById)
-    fastify.delete('/:id', { onRequest: [fastify.auth] } , UserCtrl.DeleteUser)
+
+    fastify.get('/:id', {
+        // onRequest: [fastify.auth]
+    }, UserCtrl.GetUserById)
+
+    fastify.delete('/:id', {
+        // onRequest: [fastify.auth]
+    } , UserCtrl.DeleteUser)
 }
 
 module.exports = UserRoutes

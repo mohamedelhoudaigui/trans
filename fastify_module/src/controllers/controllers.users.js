@@ -1,37 +1,34 @@
 const { check_and_sanitize } = require('../utils/utils.security')
-const UserRepo = require('../models/models.users');
+const UserModel = require('../models/models.users');
 
 const UserCtrl = {
 
     async GetAllUsers (request, reply)
     {
-        const res = await UserRepo.user_all()
+        const res = await UserModel.user_all(this.db)
         reply.status(res.code).send(res)
     },
 
     async GetUserById (request, reply)
     {
         const id = request.params.id
-        const res = await UserRepo.user_fetch(this.id)
+        const res = await UserModel.user_fetch(this.db, id)
         reply.status(res.code).send(res)
     },
 
     async CreateUser (request, reply)
     {
         const { name, email, password, avatar } = request.body;
-        const errors = check_and_sanitize({ name, email, password })
-        if (errors.length > 0)
+        errors = check_and_sanitize({ name, email, password, avatar })
+        if (errors.length !== 0)
         {
-            return reply.status(400).send(
-                {
-                    success: false,
-                    code: 400,
-                    error: errors
-                }
-            );
+            return {
+                success: false,
+                code: 400,
+                result: errors.pop()
+            }
         }
-
-        const res = await UserRepo.user_create({name, email, password, avatar})
+        const res = await UserModel.user_create(this.db, name, email, password, avatar)
         reply.status(res.code).send(res)
     },
 
@@ -39,27 +36,23 @@ const UserCtrl = {
     {
         const id = request.params.id
         const { name, email, password, avatar } = request.body;
-        // sanitize data :
-        const errors = check_and_sanitize({ name, email, password })
-        if (errors.length > 0)
+        errors = check_and_sanitize({ name, email, password, avatar })
+        if (errors.length !== 0)
         {
-            return reply.status(400).send(
-                {
-                    success: false,
-                    code: 400,
-                    error: errors
-                }
-            );
+            return {
+                success: false,
+                code: 400,
+                result: errors.pop()
+            }
         }
-
-        const res = await UserRepo.user_update(id, { name, email, password, avatar })
+        const res = await UserModel.user_update(this.db, id, name, email, password, avatar)
         reply.status(res.code).send(res)
     },
 
     async DeleteUser (request, reply)
     {
         const id = request.params.id
-        const res = await UserRepo.user_delete(id)
+        const res = await UserModel.user_delete(this.db, id)
         reply.status(res.code).send(res)
     }
 }
