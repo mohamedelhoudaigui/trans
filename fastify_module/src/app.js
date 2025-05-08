@@ -33,7 +33,7 @@ listeners.forEach((signal) => {
 
 async function start() {
     try {
-        await fastify.listen({ port: process.env.PORT || 3000 });
+        await fastify.listen({ host: '0.0.0.0', port: process.env.PORT || 5556 });
         fastify.log.info(`Server listening ${fastify.server.address().port}`);
     }
     catch(err)

@@ -93,7 +93,7 @@ const RefreshtokenModel = {
         }
     },
     
-    async refresh_tokens_delete(token)
+    async refresh_tokens_delete_by_token(token)
     {
         try
         {
@@ -109,6 +109,40 @@ const RefreshtokenModel = {
                     success: false,
                     code: 404,
                     result: "invalid refresh token"
+                }
+            }
+            return {
+                success: true,
+                code: 200,
+                result: res.changes
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
+    },
+
+    async refresh_tokens_delete_by_id(user_id)
+    {
+        try
+        {
+            const stmt = db.prepare(`
+                DELETE
+                FROM refresh_tokens
+                WHERE user_id = ?
+            `)
+            const res = await stmt.run(user_id);
+            if (res.changes === 0)
+            {
+                return {
+                    success: false,
+                    code: 404,
+                    result: "no tokens for this user id"
                 }
             }
             return {

@@ -36,6 +36,42 @@ const UserModel = {
         return `CREATE INDEX IF NOT EXISTS idx_users_name ON users (name);`
     },
 
+    async user_fetch_by_email(db, email)  // never link this to a route
+    {
+        try
+        {
+            const stmt = db.prepare(`
+                SELECT *
+                FROM users
+                WHERE email = ?
+            `)
+            const result = stmt.get(email)
+            if (result === undefined)
+            {
+                return {
+                    success: false,
+                    code: 404,
+                    result: "user not found"
+                }
+            }
+
+            return {
+                success: true,
+                code: 200,
+                result: result
+            }
+
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
+    },
+
 
     async user_fetch(db, userId)
     {

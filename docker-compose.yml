@@ -1,38 +1,16 @@
-volumes:
-  fastify_volume:
-    driver: local
-    driver_opts:
-      o: bind
-      device: ./fastify  # Host directory to bind
-      type: none
-
 networks:
   backend:
     driver: bridge
 
 services:
-  solidity_module:
-    container_name: solidity_module
-    build:
-      context: ./solidity_module
-      dockerfile: dockerfile
-    volumes:
-      - ./solidity_module:/app
-    networks:
-      - backend
-    env_file:
-      - .env
-
   fastify_module:
     container_name: fastify_module
     build:
       context: ./fastify_module
       dockerfile: dockerfile
-    volumes:
-      - fastify_volume:/app
     networks:
       - backend
     env_file:
-    - .env
+    - ./fastify_module/.env
     ports:
-      - "3000:3000"
+      - "5556:5556"
