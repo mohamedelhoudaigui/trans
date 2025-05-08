@@ -45,7 +45,7 @@ const UserModel = {
                 FROM users
                 WHERE email = ?
             `)
-            const result = stmt.get(email)
+            const result = await stmt.get(email)
             if (result === undefined)
             {
                 return {
@@ -82,7 +82,7 @@ const UserModel = {
                 FROM users
                 WHERE id = ?
             `)
-            const result = stmt.get(userId)
+            const result = await stmt.get(userId)
             if (result === undefined)
             {
                 return {
@@ -118,7 +118,7 @@ const UserModel = {
                 SELECT id, name, email, wins, loses, avatar, created_at
                 FROM users
             `)
-            const result = stmt.all()
+            const result = await stmt.all()
             return {
                 success: true,
                 code: 200,
@@ -145,7 +145,7 @@ const UserModel = {
                 INTO users (name, email, password, avatar)
                 VALUES (?, ?, ?, ?)
             `)
-            const result = stmt.run(name, email, hashedPassword, avatar)
+            const result = await stmt.run(name, email, hashedPassword, avatar)
             if (result.changes === 0)
             {
                 return {
@@ -187,7 +187,7 @@ const UserModel = {
                 FROM users
                 WHERE id = ?
             `)
-            const result = stmt.run(user_id);
+            const result = await stmt.run(user_id);
             if (result.changes === 0)
             {
                 return {
@@ -222,7 +222,7 @@ const UserModel = {
                 SET name = ?, email = ?, password = ?, avatar = ?
                 WHERE id = ?
             `);
-            const result = stmt.run(name, email, hashedPassword, avatar, user_id);
+            const result = await stmt.run(name, email, hashedPassword, avatar, user_id);
             if (result.changes === 0)
             {
                 return {

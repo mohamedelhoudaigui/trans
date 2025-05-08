@@ -2,6 +2,7 @@ networks:
   backend:
     driver: bridge
 
+
 services:
   fastify_module:
     container_name: fastify_module

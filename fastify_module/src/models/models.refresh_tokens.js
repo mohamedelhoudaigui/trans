@@ -27,7 +27,7 @@ const RefreshtokenModel = {
         return `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens (token);`
     },
     
-    async refresh_tokens_check_by_token(user_id, token)
+    async refresh_tokens_check_by_token(db, user_id, token)
     {
         try
         {
@@ -67,7 +67,7 @@ const RefreshtokenModel = {
         }
     },
     
-    async refresh_tokens_create(user_id, token)
+    async refresh_tokens_create(db, user_id, token)
     {
         try
         {
@@ -93,7 +93,7 @@ const RefreshtokenModel = {
         }
     },
     
-    async refresh_tokens_delete_by_token(token)
+    async refresh_tokens_delete_by_token(db, token)
     {
         try
         {
@@ -127,7 +127,7 @@ const RefreshtokenModel = {
         }
     },
 
-    async refresh_tokens_delete_by_id(user_id)
+    async refresh_tokens_delete_by_id(db, user_id)
     {
         try
         {

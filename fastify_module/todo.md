@@ -1,5 +1,1 @@
-fuck unit tests
-
-add pictures somehow ? -> not yet
-
-start working on the chat
+issue in /refresh always returns 404
