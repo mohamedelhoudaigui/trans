@@ -1,0 +1,17 @@
+networks:
+  backend:
+    driver: bridge
+
+
+services:
+  fastify_module:
+    container_name: fastify_module
+    build:
+      context: ./fastify_module
+      dockerfile: dockerfile
+    networks:
+      - backend
+    env_file:
+    - ./fastify_module/.env
+    ports:
+      - "5556:5556"

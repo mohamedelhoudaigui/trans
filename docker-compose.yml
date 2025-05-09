@@ -1,17 +1,140 @@
+
+# need to add swagger
+
+
+# ======================================================================================
+# VOLUMES
+# ======================================================================================
+
+volumes:
+  fastify_volume:
+    driver: local
+    driver_opts:
+      o: bind
+      device: ./fastify  # Host directory to bind
+      type: none
+  devops:
+    driver: local
+    driver_opts:
+      o: bind
+      device: ./devops
+      type: none
+  grafana:
+    driver: local
+    driver_opts:
+      o: bind
+      device: ./devops/grafana
+      type: none
+
+# ======================================================================================
+# NETWORKS
+# ======================================================================================
+
 networks:
   backend:
     driver: bridge
+  devops:
+    driver: bridge
 
+# ======================================================================================
+# SERVICES
+# ======================================================================================
 
 services:
+
+# ======================================================================================
+# BLOCK-CHAIN
+# ======================================================================================
+  solidity_module:
+    container_name: solidity_module
+    build:
+      context: ./solidity_module
+      dockerfile: dockerfile
+    volumes:
+      - ./solidity_module:/app
+    networks:
+      - backend
+    env_file:
+      - .env
+
+# ======================================================================================
+# BACKEND
+# ======================================================================================
+
   fastify_module:
     container_name: fastify_module
     build:
       context: ./fastify_module
       dockerfile: dockerfile
+    volumes:
+      - fastify_volume:/app
     networks:
       - backend
     env_file:
-    - ./fastify_module/.env
+    - .env
     ports:
-      - "5556:5556"
+      - "3000:3000"
+
+# ======================================================================================
+# MANAGEMENT
+# ======================================================================================
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - ${DOCKER_SOCK}:/var/run/docker.sock:ro
+    networks:
+      - devops
+    ports:
+      - ":9000"
+    restart: unless-stopped
+
+# ======================================================================================
+# MONITORING && DASHBOARD
+# ======================================================================================
+
+  prometheus:
+    container_name: prometheus
+    image: ubuntu/prometheus
+    volumes:
+      - ./devops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      # - ./devops/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+    networks:
+      - devops
+    ports:
+      - "0.0.0.0:9090:9090"
+    # command: 
+    depends_on:
+      portainer:
+        condition: service_started
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana-oss 
+    user: "0"
+    volumes:
+      - "grafana:/var/lib/grafana"
+    networks:
+      - devops
+    ports:
+      - "0.0.0.0:9091:3000"
+    environment:
+      - GF_SERVER_ROOT_URL=http://localhost/
+      - GF_PLUGINS_PREINSTALL=grafana-clock-panel
+      - GF_LOG_LEVEL=${LOG_LEVEL}
+
+                # "GF_PATHS_CONFIG=/etc/grafana/grafana.ini",
+                # "GF_PATHS_DATA=/var/lib/grafana",
+                # "GF_PATHS_HOME=/usr/share/grafana",
+                # "GF_PATHS_LOGS=/var/log/grafana",
+                # "GF_PATHS_PLUGINS=/var/lib/grafana/plugins",
+                # "GF_PATHS_PROVISIONING=/etc/grafana/provisioning"
+    depends_on:
+      prometheus:
+        condition: service_started
+
+# ======================================================================================
+# MONITORING
+# ======================================================================================
+
