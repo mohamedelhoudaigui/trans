@@ -1,1 +1,0 @@
-issue in /refresh always returns 404

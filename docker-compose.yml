@@ -7,18 +7,18 @@
 # ======================================================================================
 
 volumes:
-  fastify_volume:
-    driver: local
-    driver_opts:
-      o: bind
-      device: ./fastify  # Host directory to bind
-      type: none
-  devops:
-    driver: local
-    driver_opts:
-      o: bind
-      device: ./devops
-      type: none
+  # fastify_volume:
+  #   driver: local
+  #   driver_opts:
+  #     o: bind
+  #     device: ./fastify  # Host directory to bind
+  #     type: none
+  # devops:
+  #   driver: local
+  #   driver_opts:
+  #     o: bind
+  #     device: ./devops
+  #     type: none
   grafana:
     driver: local
     driver_opts:
@@ -45,35 +45,35 @@ services:
 # ======================================================================================
 # BLOCK-CHAIN
 # ======================================================================================
-  solidity_module:
-    container_name: solidity_module
-    build:
-      context: ./solidity_module
-      dockerfile: dockerfile
-    volumes:
-      - ./solidity_module:/app
-    networks:
-      - backend
-    env_file:
-      - .env
+  # solidity_module:
+  #   container_name: solidity_module
+  #   build:
+  #     context: ./solidity_module
+  #     dockerfile: dockerfile
+  #   volumes:
+  #     - ./solidity_module:/app
+  #   networks:
+  #     - backend
+  #   env_file:
+  #     - .env
 
 # ======================================================================================
 # BACKEND
 # ======================================================================================
 
-  fastify_module:
-    container_name: fastify_module
-    build:
-      context: ./fastify_module
-      dockerfile: dockerfile
-    volumes:
-      - fastify_volume:/app
-    networks:
-      - backend
-    env_file:
-    - .env
-    ports:
-      - "3000:3000"
+  # fastify_module:
+  #   container_name: fastify_module
+  #   build:
+  #     context: ./fastify_module
+  #     dockerfile: dockerfile
+  #   volumes:
+  #     - fastify_volume:/app
+  #   networks:
+  #     - backend
+  #   env_file:
+  #   - .env
+  #   ports:
+  #     - "3000:3000"
 
 # ======================================================================================
 # MANAGEMENT
@@ -114,7 +114,7 @@ services:
     image: grafana/grafana-oss 
     user: "0"
     volumes:
-      - "grafana:/var/lib/grafana"
+      - grafana:/var/lib/grafana
     networks:
       - devops
     ports:

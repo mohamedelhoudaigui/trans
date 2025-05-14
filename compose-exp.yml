@@ -1,4 +1,3 @@
-version: '3.8'
 
 # ======================================================================================
 # VOLUMES (Named volumes managed by Docker for persistent data)
