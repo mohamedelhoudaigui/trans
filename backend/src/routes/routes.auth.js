@@ -43,6 +43,7 @@ async function AuthRoutes(fastify)
         }
 
     }, AuthCtl.Logout)
+
 }
 
 module.exports = AuthRoutes

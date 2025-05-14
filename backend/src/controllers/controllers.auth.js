@@ -78,7 +78,6 @@ const AuthCtl = {
         const res = await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, user_id);
         reply.status(res.code).send(res)
     }
-
 }
 
 module.exports = AuthCtl
