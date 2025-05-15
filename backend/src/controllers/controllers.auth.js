@@ -105,9 +105,7 @@ const AuthCtl = {
         }
 
         const secret = speakeasy.generateSecret({
-            length: 20,
-            name: `google authenticator (${payload.email})`,
-            issuer: 'GoogleAuthenticator'
+            name: payload.email,
         })
 
         const store_secret =  await TwofaModel.two_fa_create(this.db, payload.id, secret);
@@ -137,10 +135,90 @@ const AuthCtl = {
         }
 
         const qr_code = await qrcode.toDataURL(res.result.otpauth_url)
-        reply.status(200).send({
-            success: true,
-            code: 200,
-            result: qr_code
+        reply.type('text/html').send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>2FA QR Code</title>
+                <style>
+                    body { 
+                        display: flex; 
+                        justify-content: center; 
+                        align-items: center; 
+                        height: 100vh; 
+                        margin: 0; 
+                    }
+                    .container { 
+                        text-align: center; 
+                    }
+                    img { 
+                        max-width: 300px; 
+                        margin-bottom: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <img src="${qr_code}" alt="2FA QR Code">
+                    <p>Scan this QR code with your authenticator app</p>
+                </div>
+            </body>
+            </html>
+        `)
+    },
+
+    async TwofaDelete(request, reply)
+    {
+        const authHeader = request.headers.authorization
+        const token = authHeader.split(' ')[1]
+        const decoded = await request.jwtVerify(token)
+        const payload = decoded.payload
+
+        const res = await TwofaModel.two_fa_delete_by_id(this.db, payload.id)
+        reply.status(res.code).send(res)
+    },
+
+    async TwofaVerify(request, reply)
+    {
+        const authHeader = request.headers.authorization
+        const access_token = authHeader.split(' ')[1]
+        const decoded = await request.jwtVerify(access_token)
+        const payload = decoded.payload
+        const { token } = request.body;
+        const id = payload.id
+    
+        const res = await TwofaModel.two_fa_get_by_id(this.db, id)
+        if (res.success === false)
+        {
+            return reply.status(res.code).send(res)
+        }
+
+        const verified = speakeasy.totp.verify({
+            secret: res.result.ascii,
+            encoding: 'ascii',
+            token: token,
+            window: 1, // for the current and the past 1 code
+        })
+
+        if (verified)
+        {
+            const update = await TwofaModel.two_fa_verify_by_id(this.db, id)
+            if (update.success === false)
+            {
+                return reply.status(update.code).send(update)
+            }
+
+            return reply.status(200).send({
+                success: true,
+                code: 200,
+                result: "2FA verified successfuly"
+            })
+
+        }
+        reply.status(400).send({
+            success: false,
+            code: 400,
+            result: "invalid 2FA token"
         })
     }
 }

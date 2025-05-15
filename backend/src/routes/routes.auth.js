@@ -46,12 +46,27 @@ async function AuthRoutes(fastify)
 
     // create 2fa secret for the session user
     fastify.get('/2fa_create', { onRequest: [fastify.auth] }, AuthCtl.TwofaCreate)
-
+    
     // get 2fa secret for the session user
     fastify.get('/2fa_get', { onRequest: [fastify.auth] }, AuthCtl.TwofaGet)
-
+    
+    
     // delete 2fa secret for the session user
     fastify.delete('/2fa_delete', { onRequest: [fastify.auth] }, AuthCtl.TwofaDelete)
+
+    fastify.post('/2fa_verify', {
+        onRequest: [fastify.auth],
+        schema: {
+            body: {
+                type: 'object',
+                required: ['token'],
+                properties: {
+                    token: { type: 'string' }
+                }
+            }
+        }
+
+    }, AuthCtl.TwofaVerify)
 
 }
 

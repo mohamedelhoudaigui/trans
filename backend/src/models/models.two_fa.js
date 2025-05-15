@@ -133,6 +133,59 @@ const TwofaModel = {
                 result: err.message
             }
         }
+    },
+
+    async two_fa_verify_by_id(db, user_id)
+    {
+        try {
+            const check = db.prepare(`
+                SELECT *
+                FROM two_fa
+                WHERE user_id = ?
+            `)
+            
+            const res = await check.get(user_id);
+
+            if (res === undefined)
+            {
+                return {
+                    success: false,
+                    code: 404,
+                    result: "no 2FA secret for this user"
+                }
+            }
+
+            if (res.verified === 1)
+            {
+                return {
+                    success: false,
+                    code: 409,
+                    result: "2FA already verified"
+                }
+            }
+
+            const stmt = db.prepare(`
+                UPDATE two_fa
+                SET verified = 1
+                WHERE user_id = ?
+            `)
+
+            const update = await stmt.run(user_id);
+
+            return {
+                success: true,
+                code: 200,
+                result: update.changes
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
     }
 }
 
