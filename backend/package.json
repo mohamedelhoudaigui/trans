@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "main": "./src/app.js",
   "scripts": {
-    "server": "node ./src/app.js"
+    "server": "node ./src/app.js",
+    "test": "node ./src/test.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
     "@fastify/jwt": "^9.0.4",
+    "@fastify/websocket": "^11.0.2",
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^11.9.1",
     "dotenv": "^16.4.7",

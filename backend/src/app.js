@@ -1,5 +1,6 @@
 const fastify = require('fastify')({ logger: true })
 const fastifyJwt = require('@fastify/jwt')
+const fastifyWebSocket = require('@fastify/websocket')
 require('dotenv').config()
 
 const initDb = require('./models/models.init')
@@ -7,6 +8,7 @@ const initDb = require('./models/models.init')
 const UserRoutes = require('./routes/routes.users')
 const AuthRoutes = require('./routes/routes.auth')
 const FriendshipRoutes = require('./routes/routes.friendships')
+const ChatRoutes = require('./routes/routes.chat')
 
 // // Plugins:
 fastify.register(require('./plugins/plugins.db'))
@@ -14,6 +16,7 @@ fastify.register(require('./plugins/plugins.auth'))
 fastify.register(fastifyJwt, {
     secret: process.env.JWT_KEY
 })
+fastify.register(fastifyWebSocket);
 
 initDb(fastify)
 
@@ -21,6 +24,8 @@ initDb(fastify)
 fastify.register(UserRoutes, { prefix: '/api/users' })
 fastify.register(AuthRoutes, { prefix: '/api/auth' })
 fastify.register(FriendshipRoutes, { prefix: '/api/friend' })
+fastify.register(ChatRoutes, { prefix: '/api/chat' })
+
 
 // // Server shutdown handler:
 const listeners = ['SIGINT', 'SIGTERM']

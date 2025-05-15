@@ -1,5 +1,7 @@
 const UserCtrl = require('../controllers/controllers.users')
 
+const clients = new Set();
+
 function UserRoutes(fastify)
 {
     fastify.post('/', {
@@ -43,6 +45,7 @@ function UserRoutes(fastify)
     fastify.delete('/:id', {
         // onRequest: [fastify.auth]
     } , UserCtrl.DeleteUser)
+
 }
 
 module.exports = UserRoutes
