@@ -1,6 +1,9 @@
 const RefreshtokenModel = require('../models/models.refresh_tokens')
 const UserModel = require('../models/models.users')
+const TwofaModel = require('../models/models.two_fa')
 const bcrypt = require('bcrypt')
+const qrcode = require('qrcode')
+const speakeasy = require('speakeasy')
 const { gen_jwt_token } = require('../utils/utils.security')
 require('dotenv').config()
 
@@ -77,6 +80,68 @@ const AuthCtl = {
         const user_id = decoded_token.payload.id
         const res = await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, user_id);
         reply.status(res.code).send(res)
+    },
+
+    async TwofaCreate(request, reply)
+    {
+        const authHeader = request.headers.authorization
+        const token = authHeader.split(' ')[1]
+        const decoded = await request.jwtVerify(token)
+        const payload = decoded.payload
+
+       const check_exist = await TwofaModel.two_fa_get_by_id(this.db, payload.id)
+       if (check_exist.success === true)
+        {
+            return reply.status(409).send({
+                success: false,
+                code: 409,
+                result: "2FA secret alreday exist for this user"
+            })
+        }
+
+        if (check_exist.success === false && check_exist.code !== 404)
+        {
+            return reply.status(check_exist.code).send(check_exist)
+        }
+
+        const secret = speakeasy.generateSecret({
+            length: 20,
+            name: `google authenticator (${payload.email})`,
+            issuer: 'GoogleAuthenticator'
+        })
+
+        const store_secret =  await TwofaModel.two_fa_create(this.db, payload.id, secret);
+        if (store_secret.success === false)    
+        {
+            return reply.status(store_secret.code).send(store_secret)
+        }
+        
+        reply.status(200).send({
+            success: true,
+            code: 200,
+            result: secret,
+        })
+    },
+
+    async TwofaGet(request, reply)
+    {
+        const authHeader = request.headers.authorization
+        const token = authHeader.split(' ')[1]
+        const decoded = await request.jwtVerify(token)
+        const payload = decoded.payload
+
+        const res = await TwofaModel.two_fa_get_by_id(this.db, payload.id)
+        if (res.success === false)
+        {
+            return reply.status(res.code).send(res)
+        }
+
+        const qr_code = await qrcode.toDataURL(res.result.otpauth_url)
+        reply.status(200).send({
+            success: true,
+            code: 200,
+            result: qr_code
+        })
     }
 }
 

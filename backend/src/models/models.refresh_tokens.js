@@ -1,7 +1,9 @@
 // refresh_token fields :
 // id -> PRIMARY KEY
+// user_id -> FOREGIN KEY
 // token -> VARCHAR
 // created_at  -> DATE
+// expires_at -> DATE
 
 const RefreshtokenModel = {
 

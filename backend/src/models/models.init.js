@@ -1,6 +1,7 @@
 const UserModel = require('./models.users')
 const FriendshipModel = require('./models.friendships')
 const RefreshtokenModel = require('./models.refresh_tokens')
+const TwofaModel = require('./models.two_fa')
 
 require('dotenv').config()
 
@@ -20,6 +21,11 @@ async function initDb(fastify)
         fastify.db.prepare(RefreshtokenModel.refresh_tokens_init()).run()
         fastify.db.prepare(RefreshtokenModel.refresh_tokens_token_index()).run()
         fastify.db.prepare(RefreshtokenModel.refresh_tokens_user_index()).run()
+    })
+
+    fastify.after(() => {
+        fastify.db.prepare(TwofaModel.two_fa_init()).run()
+        fastify.db.prepare(TwofaModel.two_fa_user_index()).run()
     })
 
 
