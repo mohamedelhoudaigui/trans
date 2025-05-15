@@ -29,7 +29,7 @@ const AuthCtl = {
         }
 
         // remove all refresh_tokens for the user
-        await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, res.result.id);
+        await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, res.result.id)
 
         const access_token = gen_jwt_token(this, res.result, process.env.ACCESS_TOKEN_EXPIRE)
         const refresh_token = gen_jwt_token(this, res.result, process.env.REFRESH_TOKEN_EXPIRE)
@@ -78,7 +78,7 @@ const AuthCtl = {
         const { refresh_token } = request.body
         const decoded_token = this.jwt.verify(refresh_token)
         const user_id = decoded_token.payload.id
-        const res = await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, user_id);
+        const res = await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, user_id)
         reply.status(res.code).send(res)
     },
 
@@ -108,7 +108,7 @@ const AuthCtl = {
             name: payload.email,
         })
 
-        const store_secret =  await TwofaModel.two_fa_create(this.db, payload.id, secret);
+        const store_secret =  await TwofaModel.two_fa_create(this.db, payload.id, secret)
         if (store_secret.success === false)    
         {
             return reply.status(store_secret.code).send(store_secret)
@@ -135,36 +135,7 @@ const AuthCtl = {
         }
 
         const qr_code = await qrcode.toDataURL(res.result.otpauth_url)
-        reply.type('text/html').send(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>2FA QR Code</title>
-                <style>
-                    body { 
-                        display: flex; 
-                        justify-content: center; 
-                        align-items: center; 
-                        height: 100vh; 
-                        margin: 0; 
-                    }
-                    .container { 
-                        text-align: center; 
-                    }
-                    img { 
-                        max-width: 300px; 
-                        margin-bottom: 20px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <img src="${qr_code}" alt="2FA QR Code">
-                    <p>Scan this QR code with your authenticator app</p>
-                </div>
-            </body>
-            </html>
-        `)
+        reply.status(200).send(qr_code) // wrap this into an img take source in html
     },
 
     async TwofaDelete(request, reply)
@@ -173,8 +144,9 @@ const AuthCtl = {
         const token = authHeader.split(' ')[1]
         const decoded = await request.jwtVerify(token)
         const payload = decoded.payload
+        const id = payload.id
 
-        const res = await TwofaModel.two_fa_delete_by_id(this.db, payload.id)
+        const res = await TwofaModel.two_fa_delete_by_id(this.db, id)
         reply.status(res.code).send(res)
     },
 
@@ -184,7 +156,7 @@ const AuthCtl = {
         const access_token = authHeader.split(' ')[1]
         const decoded = await request.jwtVerify(access_token)
         const payload = decoded.payload
-        const { token } = request.body;
+        const { token } = request.body
         const id = payload.id
     
         const res = await TwofaModel.two_fa_get_by_id(this.db, id)

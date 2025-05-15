@@ -106,7 +106,7 @@ const TwofaModel = {
         try
         {
             const stmt = db.prepare(`
-                DELETE *
+                DELETE
                 FROM two_fa
                 WHERE user_id = ?
             `)
