@@ -1,0 +1,20 @@
+# Use an official Node.js runtime as the base image
+# Specify the version that matches your project requirements
+FROM node:18-alpine
+
+# Set the working directory in the container
+WORKDIR /usr/src/app
+
+# Copy package.json and package-lock.json (or yarn.lock)
+# This allows Docker to cache the dependency installation step
+COPY package*.json ./
+
+# Install project dependencies
+# Use npm ci for production builds (requires package-lock.json)
+RUN npm ci --only=production
+
+# Copy the rest of the application files
+COPY . .
+
+# Define the command to run your application
+CMD ["npm", "run", "server"]
