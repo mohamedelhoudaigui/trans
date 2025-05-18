@@ -60,11 +60,11 @@ const GameController = () => (
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState([
-    { id: 1, name: 'John Doe', lastMessage: 'Ready for a game?', unread: 2, online: true },
-    { id: 2, name: 'Alice Smith', lastMessage: 'Good game yesterday!', unread: 0, online: true },
-    { id: 3, name: 'Pong Group', lastMessage: 'Tournament starts in 10 minutes', unread: 5, online: true, isGroup: true },
-    { id: 4, name: 'Bob Johnson', lastMessage: 'I\'ll practice more next time', unread: 0, online: false },
-    { id: 5, name: 'Emma Wilson', lastMessage: 'Thanks for the tips', unread: 0, online: false },
+    { id: 1, name: 'Makram Boukaiz', lastMessage: 'Ready for a game?', unread: 2, online: true },
+    { id: 2, name: 'Makram 2', lastMessage: 'Good game yesterday!', unread: 0, online: true },
+    { id: 3, name: 'Makram 3', lastMessage: 'Tournament starts in 10 minutes', unread: 5, online: true, isGroup: true },
+    { id: 4, name: 'Makram 4', lastMessage: 'I\'ll practice more next time', unread: 0, online: false },
+    { id: 5, name: 'Makram 5', lastMessage: 'Thanks for the tips', unread: 0, online: false },
   ]);
   
   const [selectedConversation, setSelectedConversation] = useState(null);
