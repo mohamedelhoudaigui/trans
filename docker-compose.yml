@@ -1,5 +1,5 @@
 # TODO: need to add swagger, cadvisor integration with prometheus, as well as the backend integration for the grafana NodeJS APP Dashboard
-# TODO: [URGENT] backend + frontend packaging.
+# TODO: [URGENT] backend + frontend packaging. (Backend partially addressed by this integration)
 # TODO: web serv D
 
 # ======================================================================================
@@ -12,21 +12,31 @@ volumes:
     driver: local
     driver_opts:
       o: bind
-      device: ./backend 
+      device: ./backend # This will bind mount the host's ./backend directory
       type: none
   grafana:
     name: ${PROJECT_NAME}_grafana_volume
     driver: local
     driver_opts:
       o: bind
-      device: ./devops/external-volumes/grafana
+      device: ./devops/external-volumes/grafana # Ensure this path exists or Docker will create it
       type: none
   prometheus:
     name : ${PROJECT_NAME}_prometheus_volume
     driver: local
     driver_opts:
       o: bind
-      device: ./devops/external-volumes/prometheus
+      device: ./devops/external-volumes/prometheus # Ensure this path exists or Docker will create it
+      type: none
+  sqlite_data:
+    name: ${PROJECT_NAME}_sqlite_data 
+    driver: local # local driver 
+  backend_code_volume: # For mounting ./backend from host for code
+    name: ${PROJECT_NAME}_backend_code_volume # Or ${PROJECT_NAME}_backend_volume if you prefer
+    driver: local
+    driver_opts:
+      o: bind
+      device: ./backend
       type: none
 
 # ======================================================================================
@@ -34,50 +44,70 @@ volumes:
 # ======================================================================================
 
 networks:
-  backend:
+  backend: # Network for application services (backend, potentially frontend, etc.)
     driver: bridge
-  devops:
+  devops:  # Network for DevOps tooling (Portainer, Prometheus, Grafana)
     driver: bridge
 
-# ======================================================================================
-# SERVICES
-# ======================================================================================
+
 
 services:
-
-
 
 # ======================================================================================
 # BACKEND
 # ======================================================================================
 
-  # backend:
-  #   container_name: ${PROJECT_NAME}_backend
-  #   build:
-  #     context: ./backend
-  #     dockerfile: dockerfile
-  #   volumes:
-  #     - ./backend:/app
-  #   networks:
-  #     - backend
-  #   env_file:
-  #   - .env
-  #   ports:
-  #     - "3000:3000"
+  backend:
+    container_name: ${PROJECT_NAME}_backend
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    volumes:
+      # 1. Mounts the host's ./backend directory (via the 'backend' named bind-mount volume)
+      #    to /usr/src/app in the container for application code.
+      #    (Ensure 'backend' volume at the top level is correctly defined for this, e.g., your existing 'backend_code' logic was fine)
+      #    Let's stick to the name 'backend_code_volume' or similar for the host bind mount to avoid confusion.
+      #    Assuming you have:
+      #    volumes:
+      #      backend_code_volume:
+      #        name: ${PROJECT_NAME}_backend_volume
+      #        driver: local
+      #        driver_opts:
+      #          o: bind
+      #          device: ./backend
+      #          type: none
+      - backend_code_volume:/usr/src/app # Or whatever you named the volume for ./backend host bind
 
+      # 2. Anonymous volume to preserve node_modules from the image build.
+      - /usr/src/app/node_modules
+
+      # 3. *** KEY CHANGE FOR SQLITE DATA ***
+      #    Mount the 'sqlite_data' Docker named volume (defined at the top level)
+      #    to a dedicated directory /dbdata inside the container.
+      - sqlite_data:/dbdata
+    networks:
+      - backend
+      - devops
+    env_file:
+      - ./backend/.env # DB_PATH will be updated in this file
+    ports:
+      - "${FASTIFY_HOST_PORT}:3000"
+    restart: unless-stopped
+    # depends_on:
 # ======================================================================================
 # MANAGEMENT
 # ======================================================================================
 
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: ${PROJECT_NAME}_portainer
+  dockge:
+    container_name: ${PROJECT_NAME}_dockge
+    image: louislam/dockge:latest
     volumes:
-      - ${DOCKER_SOCK}:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./devops/dockge:/app/data
+    ports:
+      - "${DOCKGE_HOST_PORT:-5001}:5001"
     networks:
       - devops
-    ports:
-      - "9000:9000"
     restart: unless-stopped
 
 # ======================================================================================
@@ -86,42 +116,89 @@ services:
 
   prometheus:
     container_name: ${PROJECT_NAME}_prometheus
-    image: ubuntu/prometheus
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-latest} # Using official prom/prometheus and tag from .env
     volumes:
-      - ./devops/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      # - ./devops/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - ./devops/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus:/prometheus # Persist Prometheus data
+      # - ./devops/prometheus/alerts.yml:/etc/prometheus/alerts.yml # Uncomment if you have alert rules
     networks:
       - devops
+      - backend # Added to allow Prometheus to reach the backend service
     ports:
-      - "0.0.0.0:9090:9090"
-    # command: 
+      - "0.0.0.0:${PROMETHEUS_HOST_PORT}:9090" # PROMETHEUS_HOST_PORT from root .env
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     depends_on:
-      portainer:
-        condition: service_started
+      # portainer: # Or remove if not a hard dependency for Prometheus startup
+      #   condition: service_started
+      backend: # Ensure backend is started before Prometheus tries to scrape it
+        condition: service_started # Consider 'service_healthy' if/when backend has a healthcheck
+    restart: unless-stopped
 
   grafana:
     container_name: ${PROJECT_NAME}_grafana
-    image: grafana/grafana-oss 
-    user: "0"
+    image: grafana/grafana-oss:${GRAFANA_IMAGE_TAG:-latest} # Use tag from .env or default to latest
+    user: "0" # Running as root, typically Grafana handles permissions internally.
+              # You might use "472" (Grafana user ID) if host volume permissions are an issue.
     volumes:
-      - grafana:/var/lib/grafana
+      - grafana:/var/lib/grafana # Persist Grafana data using the named volume
     networks:
       - devops
+      # - backend # Optional: Only if Grafana needs direct access to backend (e.g., for specific datasource not via Prometheus)
     ports:
-      - "0.0.0.0:9091:3000"
+      - "0.0.0.0:${GRAFANA_HOST_PORT}:3000" # GRAFANA_HOST_PORT from root .env
     environment:
-      - GF_SERVER_ROOT_URL=http://localhost/
-      - GF_PLUGINS_PREINSTALL=grafana-clock-panel
-      - GF_LOG_LEVEL=${LOG_LEVEL}
-      - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
+      # GF_SERVER_ROOT_URL should match how you access Grafana externally, including port if not default.
+      # Example using GRAFANA_HOST_PORT from your .env for consistency:
+      - GF_SERVER_ROOT_URL=http://localhost:${GRAFANA_HOST_PORT}
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=${GF_PLUGINS_PREINSTALL:-grafana-clock-panel} # For preinstalling, or use comma-separated list
+      - GF_LOG_LEVEL=${LOG_LEVEL:-info}
+      # - GF_PATHS_CONFIG=/etc/grafana/grafana.ini # Default, can be omitted unless customizing grafana.ini heavily
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:-admin}
+      # For data source provisioning (Prometheus)
+      - GF_DATASOURCES_PATH=/etc/grafana/provisioning/datasources
+    # If you want to provision datasources automatically:
+    # Create ./devops/grafana/provisioning/datasources/prometheus.yml
+    # And mount it:
+    #   - ./devops/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
     depends_on:
       prometheus:
         condition: service_started
+    restart: unless-stopped
 
 # ======================================================================================
 # DATABASE
 # ======================================================================================
+# No separate database service currently; backend uses SQLite within its bind-mounted volume.
+# If you switch to PostgreSQL or MySQL later, it would be defined here.
 
 
+# ======================================================================================
+# FRONTEND (New Service)
+# ======================================================================================
+  # frontend:
+  #   container_name: ${PROJECT_NAME}_frontend
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #     # args: # Pass build-time arguments to Dockerfile (can be used in nginx.conf or JS if needed)
+  #       # EXAMPLE_BUILD_ARG: "some_value"
+  #       # To make backend port available to JS, a bit more complex with static files.
+  #       # Easiest way for this simple setup is to assume backend port or make it configurable in JS.
+  #       # A more robust way involves Nginx substitutions or a config file for JS.
+  #       # For now, app.js uses a hardcoded default or a globalThis variable.
+  #   ports:
+  #     - "${FRONTEND_HOST_PORT:-8080}:80" # Use FRONTEND_HOST_PORT from root .env, default to 8080
+  #   networks:
+  #     - backend # So it can potentially resolve backend if doing server-side ops (not in this static setup)
+  #               # Not strictly needed for static files talking to backend via client's browser,
+  #               # but good practice if any server-side proxying was added to Nginx later.
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - backend # Ensure backend is up so frontend can potentially talk to it
+  #               # (though for static files, it's the client's browser making requests)
+  #

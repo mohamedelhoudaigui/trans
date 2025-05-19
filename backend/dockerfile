@@ -1,3 +1,4 @@
+
 # Use an official Node.js runtime as the base image
 # Specify the version that matches your project requirements
 FROM node:18-alpine
@@ -11,10 +12,15 @@ COPY package*.json ./
 
 # Install project dependencies
 # Use npm ci for production builds (requires package-lock.json)
+# It's generally faster and more reliable for CI/production than 'npm install'
+# --only=production ensures only production dependencies are installed, keeping the image leaner.
 RUN npm ci --only=production
 
-# Copy the rest of the application files
+# Copy the rest of the application files from the build context (./backend)
+# into the WORKDIR (/usr/src/app) in the container.
 COPY . .
 
 # Define the command to run your application
+# This will execute "npm run server" which is defined in your package.json
+# as "node ./src/app.js"
 CMD ["npm", "run", "server"]

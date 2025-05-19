@@ -1,0 +1,55 @@
+<!-- frontend/html/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Himothy Console Lite</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Himothy Console Lite (v0.0.1 - FAAFO Edition)</h1>
+    </header>
+
+    <main>
+        <section id="status">
+            <h2>System Status</h2>
+            <p>Backend API Base URL: <code id="backend-url"></code></p>
+            <p>WebSocket URL: <code id="ws-url"></code></p>
+        </section>
+
+        <section id="user-management">
+            <h2>User Management (Minimal)</h2>
+            <button id="listUsersBtn">List Users</button>
+            <pre id="userListOutput"></pre>
+        </section>
+
+        <section id="websocket-chat">
+            <h2>WebSocket Chat Test</h2>
+            <div>
+                <label for="jwtToken">Your JWT Token (for WS Auth):</label>
+                <input type="text" id="jwtToken" placeholder="Paste Access Token here">
+            </div>
+            <div>
+                <label for="recipientId">Recipient User ID:</label>
+                <input type="text" id="recipientId" placeholder="Enter recipient ID">
+            </div>
+            <div>
+                <label for="chatMessage">Message:</label>
+                <input type="text" id="chatMessage" placeholder="Enter message">
+                <button id="connectWsBtn">Connect WS</button>
+                <button id="sendWsMsgBtn" disabled>Send Message</button>
+                <button id="disconnectWsBtn" disabled>Disconnect WS</button>
+            </div>
+            <h3>Chat Log:</h3>
+            <div id="chatLog"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Chimera Ecosystem - PRAETORIAN_CHIMERA</p>
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>
