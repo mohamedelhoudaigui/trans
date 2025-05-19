@@ -6,15 +6,15 @@
 #    By: mlamkadm <mlamkadm@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/08 14:45:36 by mlamkadm          #+#    #+#              #
-#    Updated: 2025/05/11 00:00:00 by mlamkadm         ###   ########.fr        #
+#    Updated: 2025/05/17 19:55:00 by mlamkadm         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 # ======================================================================================
 # VARIABLES
 # ======================================================================================
-NAME = docker-compose.yml
-COMPOSE = docker-compose -f $(NAME)
+COMPOSE_FILE = docker-compose.yml
+COMPOSE = docker-compose -f $(COMPOSE_FILE)
 
 # ======================================================================================
 # HELP TARGET
@@ -46,6 +46,11 @@ help:
 	@echo "  make fclean     - Remove containers, networks, volumes, and images"
 	@echo "  make safe-prune - Safely prune dangling resources"
 	@echo "  make re         - Rebuild and restart containers"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make it backend"
+	@echo "  make exec backend ls -l"
+	@echo "  make inspect backend"
 
 # ======================================================================================
 # DEFAULT TARGET
@@ -98,32 +103,32 @@ logs:
 # Interactive shell into container
 # Usage: make it <container_name>
 it:
-	@container=$$(echo $(filter-out $@,$(MAKECMDGOALS)) | cut -d " " -f1); \
-	if [ -z "$$container" ]; then \
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
 		echo "Error: Container name required. Usage: make it <container_name>"; \
 		exit 1; \
 	fi; \
+	container=$(filter-out $@,$(MAKECMDGOALS)); \
 	$(COMPOSE) exec $$container /bin/bash || $(COMPOSE) exec $$container /bin/sh
 
 # Execute command in container
 # Usage: make exec <container_name> <command>
 exec:
-	@container=$$(echo $(filter-out $@,$(MAKECMDGOALS)) | cut -d " " -f1); \
-	if [ -z "$$container" ]; then \
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
 		echo "Error: Container name and command required. Usage: make exec <container_name> <command>"; \
 		exit 1; \
 	fi; \
-	shift_args=$$(echo $(filter-out $@,$(MAKECMDGOALS)) | cut -s -d " " -f2-); \
-	$(COMPOSE) exec $$container $$shift_args
+	container=$(word 2, $(MAKECMDGOALS)); \
+	cmd=$(wordlist 3, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS)); \
+	$(COMPOSE) exec $$container $$cmd
 
 # Inspect container
 # Usage: make inspect <container_name>
 inspect:
-	@container=$$(echo $(filter-out $@,$(MAKECMDGOALS)) | cut -d " " -f1); \
-	if [ -z "$$container" ]; then \
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
 		echo "Error: Container name required. Usage: make inspect <container_name>"; \
 		exit 1; \
 	fi; \
+	container=$(filter-out $@,$(MAKECMDGOALS)); \
 	docker inspect $$container
 
 # List containers, volumes, and images related to this compose project
@@ -131,7 +136,7 @@ ls:
 	@echo "===========[ Containers ]==========="
 	@$(COMPOSE) ps
 	@echo "===========[ Volumes ]=============="
-	@$(COMPOSE) exec sh -c "docker volume ls --filter name=$$(basename $$(pwd))"
+	@docker volume ls --filter name=$$(basename $$(pwd))
 	@echo "===========[ Images ]==============="
 	@$(COMPOSE) images
 
@@ -168,3 +173,4 @@ re: down build up
 
 # Default target - shows help
 .DEFAULT_GOAL := help
+

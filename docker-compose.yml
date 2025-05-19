@@ -1,6 +1,5 @@
-
 # TODO: need to add swagger, cadvisor integration with prometheus, as well as the backend integration for the grafana NodeJS APP Dashboard
-
+# TODO: [URGENT] backend + frontend packaging.
 
 # ======================================================================================
 # VOLUMES
@@ -64,19 +63,19 @@ services:
 # BACKEND
 # ======================================================================================
 
-  backend:
-    container_name: ${PROJECT_NAME}_backend
-    build:
-      context: ./backend
-      dockerfile: dockerfile
-    volumes:
-      - ./backend:/app
-    networks:
-      - backend
-    env_file:
-    - .env
-    ports:
-      - "3000:3000"
+  # backend:
+  #   container_name: ${PROJECT_NAME}_backend
+  #   build:
+  #     context: ./backend
+  #     dockerfile: dockerfile
+  #   volumes:
+  #     - ./backend:/app
+  #   networks:
+  #     - backend
+  #   env_file:
+  #   - .env
+  #   ports:
+  #     - "3000:3000"
 
 # ======================================================================================
 # MANAGEMENT
