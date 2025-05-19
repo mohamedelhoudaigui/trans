@@ -45,15 +45,7 @@ const ChatModel = {
 				LIMIT ? OFFSET ?
             `)
 
-            const res = await stmt.get(sender_id, recipient_id, limit, offset);
-            if (res === undefined)
-            {
-                return {
-                    success: false,
-                    code: 404,
-                    result: "no chat entries"
-                }
-            }
+            const res = await stmt.all(sender_id, recipient_id, limit, offset)
 
             return {
                 success: true,

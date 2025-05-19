@@ -6,7 +6,12 @@ async function ChatRoutes(fastify)
 		onRequest: [fastify.auth],
 		websocket: true
 
-	}, ChatCtl.chat_socket)
+	}, ChatCtl.ChatSocket),
+
+	fastify.get('/:id', {
+		onRequest: [fastify.auth]
+
+	}, ChatCtl.ChatHistory)
 }
 
 module.exports = ChatRoutes

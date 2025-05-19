@@ -5,7 +5,7 @@ const activeConnections = new Map() // key: user ID, value: socket
 
 const ChatCtl = {
 
-	async chat_socket(socket, request)
+	async ChatSocket(socket, request)
 	{
 		const authHeader = request.headers.authorization
         const token = authHeader.split(' ')[1]
@@ -103,6 +103,20 @@ const ChatCtl = {
 			activeConnections.delete(userId)
 			console.log(`user ${userId} disconnected, total users: ${activeConnections.size}`)
 		})
+	},
+
+	async ChatHistory(request, reply)
+	{
+		const authHeader = request.headers.authorization
+        const token = authHeader.split(' ')[1]
+        const decoded = await request.jwtVerify(token)
+        const payload = decoded.payload
+		const senderId = payload.id
+		const recId = request.params.id
+
+
+		const res = ChatModel.chat_get_by_id(this.db, senderId, recId)
+		return res
 	}
 }
 
