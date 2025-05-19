@@ -18,7 +18,7 @@
 
 const TwofaModel = {
 
-    two_fa_init()  // Make user id unique after testing !!!!!!
+    two_fa_init()
     {
         return `CREATE TABLE IF NOT EXISTS two_fa (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
