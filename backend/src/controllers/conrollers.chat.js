@@ -63,7 +63,7 @@ const ChatCtl = {
 
 					if (create_res.success)
 					{
-                    	await ChatModel.chat_mark_delivered(this.db, createResult.result.lastInsertRowid)
+                    	await ChatModel.chat_mark_delivered(this.db, create_res.result.lastInsertRowid)
                     }
 
 					// send confirmation back to sender
@@ -105,6 +105,12 @@ const ChatCtl = {
 		})
 	},
 
+	async ChatAll(request, reply)
+	{
+		const res = await ChatModel.chat_get_all(this.db)
+		reply.code(res.code).send(res)
+	},
+
 	async ChatHistory(request, reply)
 	{
 		const authHeader = request.headers.authorization
@@ -114,9 +120,10 @@ const ChatCtl = {
 		const senderId = payload.id
 		const recId = request.params.id
 
+		
 
-		const res = ChatModel.chat_get_by_id(this.db, senderId, recId)
-		return res
+		const res = await ChatModel.chat_get_by_id(this.db, senderId, recId)
+		reply.code(res.code).send(res)
 	}
 }
 

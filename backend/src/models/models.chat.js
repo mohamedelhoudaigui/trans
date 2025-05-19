@@ -34,6 +34,31 @@ const ChatModel = {
         return `CREATE INDEX IF NOT EXISTS idx_chat_recipient ON chat (recipient_id);`;
     },
 
+    async chat_get_all(db)
+    {
+        try {
+            const stmt = db.prepare(`
+                    SELECT *
+                    FROM chat
+                `)
+
+            const res = await stmt.all()
+            return {
+                success: true,
+                code: 200,
+                result: res
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
+    },
+
     async chat_get_by_id(db, sender_id, recipient_id, limit = 50, offset = 0)
     {
         try

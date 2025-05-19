@@ -12,6 +12,8 @@ async function ChatRoutes(fastify)
 		onRequest: [fastify.auth]
 
 	}, ChatCtl.ChatHistory)
+
+	fastify.put('/', ChatCtl.ChatAll)
 }
 
 module.exports = ChatRoutes
