@@ -1,5 +1,6 @@
 # TODO: need to add swagger, cadvisor integration with prometheus, as well as the backend integration for the grafana NodeJS APP Dashboard
 # TODO: [URGENT] backend + frontend packaging.
+# TODO: web serv D
 
 # ======================================================================================
 # VOLUMES
