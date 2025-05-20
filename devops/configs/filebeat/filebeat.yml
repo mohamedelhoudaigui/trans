@@ -1,0 +1,66 @@
+
+filebeat.inputs:
+  # Input type for Docker container logs
+  - type: container
+    # Paths to the Docker JSON log files on the host machine (mounted into Filebeat container)
+    paths:
+      - '/var/lib/docker/containers/*/*.log' # Standard path for Docker container logs
+    # stream: all # or stdout, stderr
+    # tail_files: false # Set to true if logs might be rotated while Filebeat is down
+
+    # Processors to add metadata to the logs
+    processors:
+      - add_docker_metadata: # Adds metadata like container ID, name, image, labels
+          host: "unix:///var/run/docker.sock" # Path to Docker socket (mounted)
+      - add_cloud_metadata: ~ # If running in a cloud environment, adds cloud instance metadata
+      # - decode_json_fields: # If logs are JSON strings and need to be parsed at Filebeat level
+      #     fields: ["message"]
+      #     process_array: false
+      #     max_depth: 1
+      #     target: "log" # Store parsed JSON under 'log' field
+      #     overwrite_keys: true
+      #     add_error_key: true
+
+# General Filebeat settings
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml # Path to modules configuration (if any used)
+  reload.enabled: false # Disable dynamic config reloading for simplicity in Docker
+
+# Output configuration: Where Filebeat sends the harvested logs
+# Option 1: Send to Logstash for further processing (Recommended for flexibility)
+output.logstash:
+  hosts: ["logstash:5044"] # Docker service name and port for Logstash Beats input
+  # worker: 1 # Number of workers sending to Logstash
+  # loadbalance: true # If multiple Logstash hosts
+  # slow_start: true
+  # bulk_max_size: 2048
+  # compression_level: 3
+  # If Logstash has SSL/TLS enabled for Beats input:
+  # ssl.enabled: true
+  # ssl.certificate_authorities: ["/path/to/ca.crt"] # Path to CA certificate
+
+# Option 2: Send directly to Elasticsearch (Simpler, but less flexible processing)
+# output.elasticsearch:
+#   hosts: ["elasticsearch:9200"]
+#   index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}" # Default Filebeat index pattern
+#   # If Elasticsearch security is enabled:
+#   # username: "${FILEBEAT_ES_USER}"
+#   # password: "${FILEBEAT_ES_PASSWORD}"
+
+# Path for Filebeat's own data (e.g., registry file to keep track of read log positions)
+# path.data: /usr/share/filebeat/data # This can be mounted as a volume for persistence
+
+# Logging for Filebeat itself
+logging.level: info # Options: debug, info, warning, error
+logging.to_files: false # Log to stdout/stderr for Docker
+# logging.to_syslog: false
+# logging.metrics.enabled: false # Disable internal metrics for simplicity
+
+# HTTP endpoint for Filebeat monitoring (optional)
+# http.enabled: true
+# http.port: 5066
+# http.host: 0.0.0.0
+
+# Strict permission checks for config files. Set to false if running as root with mounted configs.
+# This is often set via 'command: ["--strict.perms=false"]' in docker-compose.yml
+# filebeat.overwrite_pipelines: true # If using Ingest Node pipelines managed by Filebeat

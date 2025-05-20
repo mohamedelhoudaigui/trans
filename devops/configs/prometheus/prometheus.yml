@@ -1,38 +1,30 @@
 
-# default config
 global:
-  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
-  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
-  # scrape_timeout is set to the global default (10s).
+  scrape_interval: 15s
+  evaluation_interval: 15s
 
-# Alertmanager configuration
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          # - alertmanager:9093
+# rule_files:
+  # - "alert.rules.yml"
 
-# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
-rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
-
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: "prometheus"
-    # metrics_path defaults to '/metrics'
-    # scheme defaults to 'http'.
-
+  - job_name: 'prometheus' # Scrapes Prometheus itself
     static_configs:
-      - targets: ["localhost:9090"]
-       # The label name is added as a label `label_name=<label_value>` to any timeseries scraped from this config.
-        labels:
-          app: "prometheus"
-      - targets: ["localhost:9091"]
-        labels:
-          app: "grafana"
-      - targets: ["backend:3000"]
-        labels:
-          app: "backend"
+      - targets: ['localhost:9090']
+
+  - job_name: 'backend' # Scrapes your Node.js backend
+    # Assuming your backend will expose a /metrics endpoint
+    # metrics_path: /metrics # Default
+    static_configs:
+      - targets: ['backend:3000'] # Docker service name and port
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000'] # Docker service name and port
+
+  # Potential future additions:
+  # - job_name: 'elasticsearch'
+  #   static_configs:
+  #     - targets: ['elasticsearch:9200'] # Needs ES exporter or metrics endpoint
+  # - job_name: 'dockge'
+  #   static_configs:
+  #     - targets: ['dockge:5001'] # If Dockge exposes Prometheus metrics

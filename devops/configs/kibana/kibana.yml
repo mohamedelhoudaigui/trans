@@ -1,0 +1,33 @@
+# Host Kibana binds to within its container.
+server.host: "0.0.0.0"
+
+# Port Kibana listens on within its container. Mapped in docker-compose.
+# server.port: 5601
+
+# Public URL for Kibana (if behind a reverse proxy, this would be the external URL).
+# For direct access via Docker port mapping, localhost with the mapped port is typical.
+# This is often set via environment variable ELASTICSEARCH_HOSTS in docker-compose.yml
+# server.publicBaseUrl: "http://localhost:${KIBANA_HOST_PORT}" # Example
+
+# Elasticsearch instance(s) Kibana connects to.
+# This is set via environment variable ELASTICSEARCH_HOSTS in docker-compose.yml, which is preferred.
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+
+# If Elasticsearch security is enabled:
+# elasticsearch.username: "kibana_system" # Default Kibana system user or your specific user
+# elasticsearch.password: "${KIBANA_SYSTEM_PASSWORD}" # Password for the user (use env var from .env)
+
+# Paths for Kibana data (e.g., saved objects). Usually managed internally unless specific needs.
+# path.data: /usr/share/kibana/data
+
+# Logging settings for Kibana
+# logging.dest: stdout # Log to console, standard for Docker
+# logging.quiet: false
+# logging.verbose: false
+
+# Option to disable X-Pack security features in Kibana if not used with ES security.
+# This is more relevant if ES security is disabled.
+# xpack.security.enabled: false # Usually mirrors ES setting or controlled via ES connection
+
+# Default route for Kibana.
+# server.defaultRoute: /app/discover
