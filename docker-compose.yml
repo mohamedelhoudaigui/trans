@@ -165,7 +165,7 @@ services:
     restart: unless-stopped
 
 # ======================================================================================
-# LOGGING - ELK STACK (NEW)
+# LOGGING - ELK STACK 
 # ======================================================================================
   elasticsearch:
     container_name: ${PROJECT_NAME}_elasticsearch
@@ -179,7 +179,7 @@ services:
       - xpack.security.enabled=${ELASTICSEARCH_DISABLE_SECURITY:-false} # Default to false for ease, true for security
       - xpack.security.http.ssl.enabled=false # Assuming security disabled for now
       - xpack.security.transport.ssl.enabled=false # Assuming security disabled for now
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changemeStrongPassword} # Add if security enabled
+      # - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-admin} # Add if security enabled
     ulimits:
       memlock: { soft: -1, hard: -1 }
       nofile: { soft: 65535, hard: 65535 }
