@@ -32,7 +32,7 @@ volumes:
     name: ${PROJECT_NAME}_sqlite_data 
     driver: local # local driver 
   backend_code_volume: # For mounting ./backend from host for code
-    name: ${PROJECT_NAME}_backend_code_volume # Or ${PROJECT_NAME}_backend_volume if you prefer
+    name: ${PROJECT_NAME}_backend_code_volume
     driver: local
     driver_opts:
       o: bind
@@ -46,7 +46,7 @@ volumes:
 networks:
   backend: # Network for application services (backend, potentially frontend, etc.)
     driver: bridge
-  devops:  # Network for DevOps tooling (Portainer, Prometheus, Grafana)
+  devops:  # Network for DevOps tooling (Prometheus, Grafana etc.)
     driver: bridge
 
 
@@ -174,7 +174,7 @@ services:
 # DATABASE
 # ======================================================================================
 # No separate database service currently; backend uses SQLite within its bind-mounted volume.
-# If you switch to PostgreSQL or MySQL later, it would be defined here.
+# If you switch to PostgreSQL or MySQL later, it would be defined here. Since SQLite is file-based, this is up to mel-houd.
 
 
 # ======================================================================================
