@@ -13,7 +13,8 @@ async function ChatRoutes(fastify)
 
 	}, ChatCtl.ChatHistory)
 
-	fastify.put('/', ChatCtl.ChatAll)
+	fastify.put('/', ChatCtl.ChatAll) // dev only
+
 }
 
 module.exports = ChatRoutes

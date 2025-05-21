@@ -98,7 +98,7 @@ const ChatModel = {
                 VALUES (?, ?, ?)
             `)
             const { sender_id, recipient_id, message } = msg_data
-            const res = await stmt.run(sender_id, recipient_id, message);
+            const res = await stmt.run(sender_id, recipient_id, message)
             return {
                 success: true,
                 code: 200,
@@ -125,7 +125,7 @@ const ChatModel = {
 				ORDER BY created_at
             `)
 
-            const res = await stmt.all(sender_id, recipient_id, message);
+            const res = await stmt.all(recipient_id)
             return {
                 success: true,
                 code: 200,
@@ -148,24 +148,25 @@ const ChatModel = {
 			const stmt = await db.prepare(`
 				UPDATE chat
 				SET is_delivered = 1,
-					delivered_at = CURRENT_TIMESTAMP
+				delivered_at = CURRENT_TIMESTAMP
 				WHERE id = ? AND is_delivered = 0
 			`)
-			const res = await stmt.run(message_id);
+
+			const res = await stmt.run(message_id)
 			
 			if (res.changes === 0) {
 				return {
 					success: false,
 					code: 404,
 					result: "message not found or already delivered"
-				};
+				}
 			}
 
 			return {
 				success: true,
 				code: 200,
 				result: res.changes
-			};
+			}
 		}
 		catch (err)
 		{

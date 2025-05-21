@@ -15,19 +15,33 @@ const ChatCtl = {
 
 		if (!userId)
 		{
-			socket.close(4000, 'User ID is required')
-			return
+			socket.close(4000, 'user ID is required')
+			return {
+				success: false,
+				code: 400,
+				result: "user ID is required"
+			}
 		}
 
 		if (activeConnections.has(userId)) 
 		{
-			socket.close(4001, 'User already connected')
-			return
+			socket.close(4001, 'user already connected')
+			return {
+				success: false,
+				code: 400,
+				result: "user already connected"
+			}
 		}
 
 		activeConnections.set(userId, socket)
 		console.log(`user ${userId} connected, total users: ${activeConnections.size}`)
 
+
+		const unread = await ChatModel.chat_get_unread(userId)
+		if (unread.success === true || unread.result.length > 0)
+		{
+			
+		}
 
 		socket.on('message', async (rawMessage) => {
 
@@ -37,8 +51,11 @@ const ChatCtl = {
 
 				if (!message.to || !message.content)
 				{
-					console.log('invalid message format:\n' + message)
-					return
+					return {
+						success: false,
+						code: 400,
+						result: "invalid message format"
+					}
 				}
 
 				const res_socket = activeConnections.get(message.to)
@@ -58,7 +75,8 @@ const ChatCtl = {
 					const create_res = await ChatModel.chat_create(this.db, {
 						sender_id: userId,
 						recipient_id: message.to,
-						message: message.content
+						message: message.content,
+						delivered: 1
 					})
 
 					if (create_res.success)
@@ -78,13 +96,13 @@ const ChatCtl = {
 					await ChatModel.chat_create(this.db, {
                         sender_id: userId,
                         recipient_id: message.to,
-                        message: message.content
+                        message: message.content,
+						delivered: 0
                     })
 
-					// Recipient not available
 					socket.send(JSON.stringify({
-						status: 'error',
-						message: 'Recipient not available'
+						status: 'chat stored',
+						message: 'this message is stored as non delivered'
 					}))
 				}
 			}
@@ -119,8 +137,6 @@ const ChatCtl = {
         const payload = decoded.payload
 		const senderId = payload.id
 		const recId = request.params.id
-
-		
 
 		const res = await ChatModel.chat_get_by_id(this.db, senderId, recId)
 		reply.code(res.code).send(res)
