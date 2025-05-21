@@ -89,16 +89,41 @@ services:
 # ======================================================================================
 # FRONTEND (Commented out as per your current file)
 # ======================================================================================
-  # frontend:
-  #   container_name: ${PROJECT_NAME}_frontend
-  #   build: { context: ./frontend, dockerfile: Dockerfile }
-  #   ports: ["${FRONTEND_HOST_PORT:-8080}:80"]
-  #   networks: [backend]
-  #   restart: unless-stopped
-  #   depends_on: [backend]
-  #   logging:
-  #     driver: "json-file"
-  #     options: { max-size: "10m", max-file: "3", tag: "{{.Name}}" }
+
+  frontend:
+    container_name: ${PROJECT_NAME}_frontend
+    build:
+      context: ./frontend # Points to your Next.js frontend directory
+      dockerfile: Dockerfile # Uses frontend/Dockerfile (B-Line version)
+    ports:
+      # Exposes Next.js dev server (running on 3000 in container) to host
+      # FRONTEND_HOST_PORT should be defined in your root .env (e.g., 8080)
+      - "${FRONTEND_HOST_PORT:-8080}:3000"
+    networks:
+      - backend # Allows frontend (if making server-side calls or API routes) to reach 'backend' service
+    env_file:
+      - ./frontend/.env # For NEXT_PUBLIC_ variables (if any, like API URLs)
+                       # Create frontend/.env if you have client-side env vars
+    # Volumes for development:
+    # Mounts your host's ./frontend to /app in the container for hot-reloading
+    volumes:
+       - ./frontend:/app
+       # Anonymous volume to prevent host node_modules from overwriting container's
+       # This ensures 'npm ci' in the Dockerfile is respected inside the container.
+       - /app/node_modules
+       # Anonymous volume for Next.js build cache/output during dev, good for performance
+       - /app/.next
+    # The CMD in the Dockerfile is already "npm run dev".
+    # No 'command:' override needed here for B-line dev setup.
+    restart: unless-stopped
+    depends_on: # Optional, but good if frontend makes immediate server-side calls to backend on start
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "{{.Name}}"
 
 # ======================================================================================
 # MANAGEMENT
