@@ -34,6 +34,8 @@ const ChatModel = {
         return `CREATE INDEX IF NOT EXISTS idx_chat_recipient ON chat (recipient_id);`;
     },
 
+
+    // this is for a dev purposes
     async chat_get_all(db)
     {
         try {
@@ -59,6 +61,8 @@ const ChatModel = {
         }
     },
 
+    // get chat history with someone, user id is getted from the jwt token the other is passed in params :id
+    // when you want to grab more from chat just do : offset += limit
     async chat_get_by_id(db, sender_id, recipient_id, limit = 50, offset = 0)
     {
         try
@@ -88,17 +92,22 @@ const ChatModel = {
         }
     },
     
+    // msg data object : {sender_id(int), recipient_id(int), message(text), is_delivered(0 or 1)}
+
     async chat_create(db, msg_data)
     {
         try
         {
             const stmt = db.prepare(`
                 INSERT
-                INTO chat (sender_id, recipient_id, message)
-                VALUES (?, ?, ?)
+                INTO chat (sender_id, recipient_id, message, is_delivered, delivered_at)
+                VALUES (?, ?, ?, ?, ?)
             `)
-            const { sender_id, recipient_id, message } = msg_data
-            const res = await stmt.run(sender_id, recipient_id, message)
+
+            const { sender_id, recipient_id, message, is_delivered, delivered_at = null } = msg_data
+            console.log(delivered_at)
+
+            const res = await stmt.run(sender_id, recipient_id, message, is_delivered, delivered_at)
             return {
                 success: true,
                 code: 200,
@@ -115,13 +124,14 @@ const ChatModel = {
 		}
     },
 
+    // get unread messages so that we send them to the user when he connects back
 	async chat_get_unread(db, recipient_id)
 	{
 		try
         {
             const stmt = db.prepare(`
 				SELECT * FROM chat
-				WHERE recipient_id = ? AND delivered = 0
+				WHERE recipient_id = ? AND is_delivered = 0
 				ORDER BY created_at
             `)
 
@@ -129,7 +139,7 @@ const ChatModel = {
             return {
                 success: true,
                 code: 200,
-                result: res.changes
+                result: res
             }
         }
         catch (err)
@@ -140,43 +150,19 @@ const ChatModel = {
                 result: err.message
             }
 		}
-	  },
+	},
 
-	async chat_mark_delivered(db, message_id)
-	{
-		try {
-			const stmt = await db.prepare(`
-				UPDATE chat
-				SET is_delivered = 1,
-				delivered_at = CURRENT_TIMESTAMP
-				WHERE id = ? AND is_delivered = 0
-			`)
-
-			const res = await stmt.run(message_id)
-			
-			if (res.changes === 0) {
-				return {
-					success: false,
-					code: 404,
-					result: "message not found or already delivered"
-				}
-			}
-
-			return {
-				success: true,
-				code: 200,
-				result: res.changes
-			}
-		}
-		catch (err)
-		{
-			return {
-				success: false,
-				code: 500,
-				result: err.message
-			}
-		}
-	}
+    // use this after a offline user gets all his messages
+    async chat_mark_delivered_bulk(db, recipient_id)
+    {
+        const stmt = await db.prepare(`
+            UPDATE chat
+            SET is_delivered = 1,
+                delivered_at = CURRENT_TIMESTAMP
+            WHERE recipient_id = ? AND is_delivered = 0
+        `);
+        await stmt.run(recipient_id);
+    }
 
 }
 

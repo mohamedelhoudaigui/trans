@@ -26,6 +26,12 @@ fastify.register(AuthRoutes, { prefix: '/api/auth' })
 fastify.register(FriendshipRoutes, { prefix: '/api/friend' })
 fastify.register(ChatRoutes, { prefix: '/api/chat' })
 
+// remove in prod (just to test chat)
+fastify.register(require('@fastify/cors'), {
+    origin: true,
+    credentials: true
+})
+
 
 // // Server shutdown handler:
 const listeners = ['SIGINT', 'SIGTERM']
