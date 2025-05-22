@@ -105,7 +105,6 @@ const ChatModel = {
             `)
 
             const { sender_id, recipient_id, message, is_delivered, delivered_at = null } = msg_data
-            console.log(delivered_at)
 
             const res = await stmt.run(sender_id, recipient_id, message, is_delivered, delivered_at)
             return {
@@ -155,13 +154,64 @@ const ChatModel = {
     // use this after a offline user gets all his messages
     async chat_mark_delivered_bulk(db, recipient_id)
     {
-        const stmt = await db.prepare(`
-            UPDATE chat
-            SET is_delivered = 1,
-                delivered_at = CURRENT_TIMESTAMP
-            WHERE recipient_id = ? AND is_delivered = 0
-        `);
-        await stmt.run(recipient_id);
+        try
+        {
+            const stmt = await db.prepare(`
+                UPDATE chat
+                SET is_delivered = 1,
+                    delivered_at = CURRENT_TIMESTAMP
+                WHERE recipient_id = console.log(delivered_at)ND is_delivered = 0
+            `)
+
+            const res = await stmt.run(recipient_id)
+            return {
+                success: true,
+                code: 200,
+                result: res.lastInsertRowid
+            }
+
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
+    },
+
+    async chat_get_profiles(db, user_id)
+    {
+        try
+        {
+             const stmt = db.prepare(`
+                SELECT u.id, u.name, u.email, u.avatar, u.wins, u.loses
+                FROM users u
+                WHERE u.id IN (
+                    SELECT DISTINCT recipient_id FROM chat WHERE sender_id = ?
+                    UNION
+                    SELECT DISTINCT sender_id FROM chat WHERE recipient_id = ?
+                )
+                ORDER BY u.name; -- Optional: Order profiles, e.g., by name
+            `)
+
+            const res = await stmt.all(user_id, user_id)
+        
+            return {
+                success: true,
+                code: 200,
+                result: res
+            }
+        }
+        catch (err)
+        {
+            return {
+                success: false,
+                code: 500,
+                result: err.message
+            }
+        }
     }
 
 }

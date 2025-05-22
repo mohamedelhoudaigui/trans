@@ -149,6 +149,19 @@ const ChatCtl = {
 
 		const res = await ChatModel.chat_get_by_id(this.db, senderId, recId)
 		reply.code(res.code).send(res)
+	},
+
+	async ChatProfiles(request, reply)
+	{
+		const authHeader = request.headers.authorization
+        const token = authHeader.split(' ')[1]
+        const decoded = await request.jwtVerify(token)
+        const payload = decoded.payload
+		const senderId = payload.id
+		
+		const res = await ChatModel.chat_get_profiles(this.db, senderId)
+
+		reply.code(res.code).send(res)
 	}
 }
 
