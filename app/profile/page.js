@@ -90,7 +90,7 @@ export default function ProfileSettings() {
       <div className="avatar-section">
         <div className="avatar-container">
           {formData.avatar ? (
-            <img 
+            <img key={formData.avatar}
               src={formData.avatar} 
               alt="Profile Avatar" 
               className="profile-avatar"
