@@ -67,7 +67,7 @@ export default function RootLayout({
 }>) {
   // Constants
   const DEFAULT_AVATAR = '/avatars/default.png';
-const NOTIFICATION_ICON = '🔔︎';
+const NOTIFICATION_ICON = '🔔';
 
   const [currentUser, setCurrentUser] = useState<User>({
     id: 'me',
