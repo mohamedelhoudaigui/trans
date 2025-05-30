@@ -11,7 +11,7 @@ export default function Profile({ navigateTo }: ProfileProps) {
         <div className="chat-area-gradient">
           <div className="chat-area solid-effect">
             <div className="chat-header">
-              <h2 className="settings-title">Tournament</h2>
+              <h2 className="settings-title" >Tournament</h2>
             </div>
           </div>
         </div>
