@@ -4,8 +4,7 @@
 
 RED     := \033[0;31m
 GREEN   := \033[0;32m
-YELLOW  := \033[1;33m
-BLUE    := \033[0;34m
+YELLOW  := \033[1;33m BLUE    := \033[0;34m
 NC      := \033[0m
 
 # ======================================================================================
@@ -14,7 +13,7 @@ NC      := \033[0m
 
 SHELL := /bin/bash
 
-COMPOSE_FILE ?= docker-compose.yml
+COMPOSE_FILE ?= docker-compose.dev.yml
 COMPOSE := docker-compose -f $(COMPOSE_FILE)
 
 # ======================================================================================
@@ -98,6 +97,8 @@ restart: down up ## Restart all services
 re: down build up ## Rebuild images and restart all services
 
 rere: down no-cache up ## Rebuild images without cache and restart all services
+
+rebuild: down clean build up ## Alias for re
 
 # ======================================================================================
 # BUILDING IMAGES
@@ -196,6 +197,14 @@ prune: ## Prune unused Docker images, build cache, and dangling volumes (DOCKER 
 	else \
 		echo -e "$(YELLOW)System prune aborted by user.$(NC)"; \
 	fi
+
+app:
+	$(COMPOSE) up -d frontend
+	
+
+elk:
+	make up kibana
+
 
 # --- Variable Handling for 'service', 'args', 'file' ---
 # This allows 'make logs service=backend' or 'make build service=frontend file=docker-compose.prod.yml'

@@ -1,13 +1,12 @@
 # TODO: need to add swagger, cadvisor integration with prometheus, as well as the backend integration for the grafana NodeJS APP Dashboard
-# TODO: [URGENT] backend + frontend packaging.
-# TODO: web serv D
+# make devops, make frontend, make backend, make all
 
 # ======================================================================================
 # VOLUMES
 # ======================================================================================
 
+# Ill leave the volumes bind mounts as they are, until decided otherwise
 volumes:
-  # Volume for backend application code (bind mount from host)
   backend_code_volume: # Using this name as it's in your current backend service
     name: ${PROJECT_NAME}_backend_code_volume
     driver: local
@@ -16,30 +15,26 @@ volumes:
       device: ./backend
       type: none
 
-  # Volume for Grafana data/config (bind mount from host)
-  grafana_volume: # Using this name as it's in your current grafana service
-    name: ${PROJECT_NAME}_grafana_volume # Matched to your grafana service volume name
+  grafana_volume:
+    name: ${PROJECT_NAME}_grafana_volume
     driver: local
     driver_opts:
       o: bind
       device: ./devops/external-volumes/grafana
       type: none
 
-  # Volume for Prometheus data/config (bind mount from host)
-  prometheus_volume: # Using this name as it's in your current prometheus service
-    name: ${PROJECT_NAME}_prometheus_volume # Matched to your prometheus service volume name
+  prometheus_volume: 
+    name: ${PROJECT_NAME}_prometheus_volume 
     driver: local
     driver_opts:
       o: bind
       device: ./devops/external-volumes/prometheus # Your existing config for prometheus data
       type: none
 
-  # Docker-managed named volume for SQLite database data
   sqlite_data:
     name: ${PROJECT_NAME}_sqlite_data
     driver: local
-
-  # --- NEW ELK STACK VOLUMES ---
+# --- NEW ELK STACK VOLUMES ---
   elasticsearch_data: # For Elasticsearch data persistence
     name: ${PROJECT_NAME}_elasticsearch_data
     driver: local
@@ -62,6 +57,7 @@ services:
 # ======================================================================================
 # BACKEND
 # ======================================================================================
+
   backend:
     container_name: ${PROJECT_NAME}_backend
     build:
@@ -101,11 +97,8 @@ services:
       - "${FRONTEND_HOST_PORT:-8080}:3000"
     networks:
       - backend # Allows frontend (if making server-side calls or API routes) to reach 'backend' service
-    env_file:
-      - ./frontend/.env # For NEXT_PUBLIC_ variables (if any, like API URLs)
-                       # Create frontend/.env if you have client-side env vars
-    # Volumes for development:
-    # Mounts your host's ./frontend to /app in the container for hot-reloading
+    # env_file:
+    #   - ./frontend/.env # For NEXT_PUBLIC_ variables (if any, like API URLs)
     volumes:
        - ./frontend:/app
        # Anonymous volume to prevent host node_modules from overwriting container's
@@ -128,6 +121,7 @@ services:
 # ======================================================================================
 # MANAGEMENT
 # ======================================================================================
+
   dockge:
     container_name: ${PROJECT_NAME}_dockge
     image: louislam/dockge:latest
@@ -146,6 +140,7 @@ services:
 # ======================================================================================
 # MONITORING && DASHBOARD (Prometheus & Grafana)
 # ======================================================================================
+
   prometheus:
     container_name: ${PROJECT_NAME}_prometheus
     image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-latest}
@@ -192,6 +187,7 @@ services:
 # ======================================================================================
 # LOGGING - ELK STACK 
 # ======================================================================================
+
   elasticsearch:
     container_name: ${PROJECT_NAME}_elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
@@ -213,7 +209,7 @@ services:
       # - ./devops/configs/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro # Optional
     ports:
       - "${ELASTICSEARCH_HOST_PORT_HTTP}:9200"
-      - "${ELASTICSEARCH_HOST_PORT_TRANSPORT}:9300" # Typically not needed for host exposure in single node
+      - "${ELASTICSEARCH_HOST_PORT_TRANSPORT}:9300" # For multiple nodes architecture
     networks: [devops]
     restart: unless-stopped
     healthcheck:
@@ -275,5 +271,6 @@ services:
     command: ["--strict.perms=false"] # Often needed when running as root with mounted volumes
     depends_on:
       - logstash # Or elasticsearch if outputting directly
-      - backend # Ensure backend is started so its logs are available
+      # - backend # Ensure backend is started so its logs are available
     restart: unless-stopped
+

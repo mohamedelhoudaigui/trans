@@ -7,6 +7,7 @@
 // loses -> INTEGERT
 // avatar -> varchar 300
 // created_at -> TIMESTAMP
+
 const bcrypt = require('bcrypt')
 
 
