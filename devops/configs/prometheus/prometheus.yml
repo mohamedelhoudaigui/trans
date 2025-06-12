@@ -3,28 +3,27 @@ global:
   scrape_interval: 30s 
   evaluation_interval: 15s
 
-# rule_files:
-  # - "alert.rules.yml"
+rule_files:
+  - "alerts/*"
+  - "rules/*"
+
 
 scrape_configs:
-  - job_name: 'prometheus' # Scrapes Prometheus itself
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:3000']
+        labels:
+          app: '${PROJECT_NAME}_backend'
+    metrics_path: /metrics
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          app: '${PROJECT_NAME}_cadvisor'
+
+  - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-
-  - job_name: 'backend' # Scrapes your Node.js backend
-    # Assuming your backend will expose a /metrics endpoint
-    # metrics_path: /metrics # Default
-    static_configs:
-      - targets: ['backend:3000'] # Docker service name and port
-
-  - job_name: 'grafana'
-    static_configs:
-      - targets: ['grafana:3000'] # Docker service name and port
-
-  # Potential future additions:
-  # - job_name: 'elasticsearch'
-  #   static_configs:
-  #     - targets: ['elasticsearch:9200'] # Needs ES exporter or metrics endpoint
-  # - job_name: 'dockge'
-  #   static_configs:
-  #     - targets: ['dockge:5001'] # If Dockge exposes Prometheus metrics
+        labels:
+          app: '${PROJECT_NAME}_prometheus'

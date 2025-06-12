@@ -4,7 +4,7 @@
   "main": "./src/app.js",
   "scripts": {
     "server": "node ./src/app.js",
-    "test": "node ./src/test.js"
+    "test": "node ./src/app-test.js"
   },
   "author": "",
   "license": "ISC",
@@ -20,6 +20,7 @@
     "fastify-plugin": "^5.0.1",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
-    "validator": "^13.15.0"
+    "validator": "^13.15.0",
+    "prom-client": "^15.0.0"
   }
 }

@@ -85,6 +85,10 @@ up: ## Start all services in detached mode
 	@$(COMPOSE) up -d --remove-orphans
 	@echo -e "$(GREEN)Services are now running in detached mode.$(NC)"
 
+start: # up service name
+	@echo -e "$(GREEN)Starting services from $(COMPOSE_FILE)... All systems GO!$(NC)"
+	@$(COMPOSE) up -d --remove-orphans $(service) # Can start specific service if 'service' var is passed
+
 down: ## Stop and remove all services and networks defined in the compose file
 	@echo -e "$(RED)Shutting down services from $(COMPOSE_FILE)... Powering down.$(NC)"
 	@$(COMPOSE) down --remove-orphans
@@ -198,11 +202,17 @@ prune: ## Prune unused Docker images, build cache, and dangling volumes (DOCKER 
 		echo -e "$(YELLOW)System prune aborted by user.$(NC)"; \
 	fi
 
+
+.PHONY: app elk monitoring
+
 app:
 	$(COMPOSE) up -d --build frontend
 	
 elk:
 	$(COMPOSE) up -d kibana
+
+monitoring:
+	$(COMPOSE) up -d --build grafana
 
 
 # --- Variable Handling for 'service', 'args', 'file' ---

@@ -28,6 +28,7 @@ volumes:
   sqlite_data:
     name: ${PROJECT_NAME}_sqlite_data
     driver: local
+    # external: true
   elasticsearch_data:
     name: ${PROJECT_NAME}_elasticsearch_data
     driver: local
@@ -184,7 +185,6 @@ services:
     ports:
       - "${CADVISOR_HOST_PORT:-8081}:8080"
     command:
-      - "--storage_driver=overlayfs"
       - "--housekeeping_interval=30s"
     restart: unless-stopped
     depends_on:
