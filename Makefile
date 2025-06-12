@@ -14,7 +14,7 @@ NC      := \033[0m
 SHELL := /bin/bash
 
 COMPOSE_FILE ?= docker-compose.dev.yml
-COMPOSE := docker-compose -f $(COMPOSE_FILE)
+COMPOSE := docker compose -f $(COMPOSE_FILE)
 
 # ======================================================================================
 # DEFAULT TARGET & SELF-DOCUMENTATION
@@ -22,7 +22,7 @@ COMPOSE := docker-compose -f $(COMPOSE_FILE)
 .DEFAULT_GOAL := help
 
 # Phony targets -don't represent files
-.PHONY: help up down logs ps build no-cache restart re config status clean fclean prune \
+.PHONY: app help up down logs ps build no-cache restart re config status clean fclean prune \
         stop start \
         ssh exec inspect list-volumes list-networks
 
@@ -199,11 +199,10 @@ prune: ## Prune unused Docker images, build cache, and dangling volumes (DOCKER 
 	fi
 
 app:
-	$(COMPOSE) up -d frontend
+	$(COMPOSE) up -d --build frontend
 	
-
 elk:
-	make up kibana
+	$(COMPOSE) up -d kibana
 
 
 # --- Variable Handling for 'service', 'args', 'file' ---

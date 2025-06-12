@@ -1,5 +1,5 @@
-# cluster.name: "chimera-elk-cluster" # This is set via environment variable in docker-compose.yml
-# node.name: es01_chimera            # This is set via environment variable in docker-compose.yml
+cluster.name: "chimera-elk-cluster" # This is set via environment variable in docker-compose.yml
+node.name: es01_chimera            # This is set via environment variable in docker-compose.yml
 
 # Network host to bind to. 0.0.0.0 means all available interfaces.
 network.host: 0.0.0.0
@@ -7,7 +7,7 @@ network.host: 0.0.0.0
 # For single-node development, explicitly state it.
 # This is also set via environment variable 'discovery.type=single-node' in docker-compose.yml,
 # which is often preferred. Including it here is for documentation or if env var is removed.
-# discovery.type: single-node
+discovery.type: single-node
 
 # Path settings are usually handled by the Docker image and volume mounts.
 # path.data: /usr/share/elasticsearch/data
@@ -20,5 +20,5 @@ network.host: 0.0.0.0
 # transport.port: 9300
 
 # Disable voting configuration N-1 warnings for single node cluster
-# cluster.initial_master_nodes: ["es01_chimera"] # Set to node.name if discovery.type is not single-node
+cluster.initial_master_nodes: ["es01_chimera"] # Set to node.name if discovery.type is not single-node
                                               # Not strictly needed if discovery.type=single-node is effective.

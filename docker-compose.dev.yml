@@ -1,20 +1,16 @@
-# TODO: need to add swagger, cadvisor integration with prometheus, as well as the backend integration for the grafana NodeJS APP Dashboard
-# make devops, make frontend, make backend, make all
 
 # ======================================================================================
 # VOLUMES
 # ======================================================================================
 
-# Ill leave the volumes bind mounts as they are, until decided otherwise
 volumes:
-  backend_code_volume: # Using this name as it's in your current backend service
+  backend_code_volume:
     name: ${PROJECT_NAME}_backend_code_volume
     driver: local
     driver_opts:
       o: bind
       device: ./backend
       type: none
-
   grafana_volume:
     name: ${PROJECT_NAME}_grafana_volume
     driver: local
@@ -22,94 +18,88 @@ volumes:
       o: bind
       device: ./devops/external-volumes/grafana
       type: none
-
-  prometheus_volume: 
-    name: ${PROJECT_NAME}_prometheus_volume 
+  prometheus_volume:
+    name: ${PROJECT_NAME}_prometheus_volume
     driver: local
     driver_opts:
       o: bind
-      device: ./devops/external-volumes/prometheus # Your existing config for prometheus data
+      device: ./devops/external-volumes/prometheus
       type: none
-
   sqlite_data:
     name: ${PROJECT_NAME}_sqlite_data
     driver: local
-# --- NEW ELK STACK VOLUMES ---
-  elasticsearch_data: # For Elasticsearch data persistence
+  elasticsearch_data:
     name: ${PROJECT_NAME}_elasticsearch_data
     driver: local
-  # filebeat_data: # Optional: for Filebeat registry persistence
-  #   name: ${PROJECT_NAME}_filebeat_data
-  #   driver: local
+  cadvisor_data:
+    name: ${PROJECT_NAME}_cadvisor_data
+    driver: local
 
 # ======================================================================================
 # NETWORKS
 # ======================================================================================
 
 networks:
-  backend: # Network for application services (backend, potentially frontend)
+  backend:
     driver: bridge
-  devops:  # Network for DevOps tooling (Prometheus, Grafana, Dockge, ELK)
+  devops:
     driver: bridge
+
+# ======================================================================================
+# SERVICES
+# ======================================================================================
 
 services:
-
-# ======================================================================================
-# BACKEND
-# ======================================================================================
-
+  # Backend Service
   backend:
     container_name: ${PROJECT_NAME}_backend
     build:
       context: ./backend
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     volumes:
-      - backend_code_volume:/usr/src/app # Mounts host's ./backend for code
-      - /usr/src/app/node_modules      # Anonymous volume for node_modules
-      - sqlite_data:/dbdata            # Mounts Docker volume for SQLite data
+      - backend_code_volume:/usr/src/app
+      - /usr/src/app/node_modules
+      - sqlite_data:/dbdata
     networks:
-      - backend  # Primary app network
-      - devops   # For Prometheus scraping, and ELK Filebeat access if needed
+      - backend
+      - devops
     env_file:
-      - ./backend/.env # DB_PATH should be /dbdata/database.db
+      - ./backend/.env
+    environment:
+      - PROMETHEUS_METRICS_PATH=/metrics # For Prometheus scraping
+      - SWAGGER_HOST=0.0.0.0
+      - SWAGGER_PORT=3000
     ports:
-      - "${FASTIFY_HOST_PORT}:3000"
+      - "${FASTIFY_HOST_PORT:-3000}:3000"
     restart: unless-stopped
-    logging: # Explicitly define logging for Filebeat to pick up if configured for Docker logs
+    logging:
       driver: "json-file"
       options:
-        max-size: "20m" # Increased size
+        max-size: "20m"
         max-file: "5"
-        tag: "{{.Name}}" # Tag with container name, useful in ELK
+        tag: "{{.Name}}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-# ======================================================================================
-# FRONTEND (Commented out as per your current file)
-# ======================================================================================
-
+  # Frontend Service
   frontend:
     container_name: ${PROJECT_NAME}_frontend
     build:
-      context: ./frontend # Points to your Next.js frontend directory
-      dockerfile: Dockerfile # Uses frontend/Dockerfile (B-Line version)
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      # Exposes Next.js dev server (running on 3000 in container) to host
-      # FRONTEND_HOST_PORT should be defined in your root .env (e.g., 8080)
       - "${FRONTEND_HOST_PORT:-8080}:3000"
     networks:
-      - backend # Allows frontend (if making server-side calls or API routes) to reach 'backend' service
-    # env_file:
-    #   - ./frontend/.env # For NEXT_PUBLIC_ variables (if any, like API URLs)
+      - backend
     volumes:
-       - ./frontend:/app
-       # Anonymous volume to prevent host node_modules from overwriting container's
-       # This ensures 'npm ci' in the Dockerfile is respected inside the container.
-       - /app/node_modules
-       # Anonymous volume for Next.js build cache/output during dev, good for performance
-       - /app/.next
-    # The CMD in the Dockerfile is already "npm run dev".
-    # No 'command:' override needed here for B-line dev setup.
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     restart: unless-stopped
-    depends_on: # Optional, but good if frontend makes immediate server-side calls to backend on start
+    depends_on:
       - backend
     logging:
       driver: "json-file"
@@ -118,99 +108,112 @@ services:
         max-file: "3"
         tag: "{{.Name}}"
 
-# ======================================================================================
-# MANAGEMENT
-# ======================================================================================
-
+  # Dockge Service
   dockge:
     container_name: ${PROJECT_NAME}_dockge
     image: louislam/dockge:latest
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro # Read-only is safer
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./devops/external-volumes/dockge:/app/data
     ports:
       - "${DOCKGE_HOST_PORT:-5001}:5001"
     networks:
       - devops
     environment:
-      - DOCKGE_STACKS_DIR=/app/data/stacks # Explicitly define if needed, usually defaults ok
-      - DOCKGE_ENABLE_CONSOLE=${DOCKGE_ENABLE_CONSOLE:-true} # From your config
+      - DOCKGE_STACKS_DIR=/app/data/stacks
+      - DOCKGE_ENABLE_CONSOLE=${DOCKGE_ENABLE_CONSOLE:-true}
     restart: unless-stopped
 
-# ======================================================================================
-# MONITORING && DASHBOARD (Prometheus & Grafana)
-# ======================================================================================
-
+  # Prometheus Service
   prometheus:
     container_name: ${PROJECT_NAME}_prometheus
-    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-latest}
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-v2.54.1}
     volumes:
       - ./devops/configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_volume:/prometheus # Using your existing volume name for Prometheus data
+      - prometheus_volume:/prometheus
     networks:
       - devops
-      - backend # To scrape backend service
+      - backend
     ports:
-      - "0.0.0.0:${PROMETHEUS_HOST_PORT}:9090"
+      - "0.0.0.0:${PROMETHEUS_HOST_PORT:-9090}:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
     depends_on:
-      backend:
-        condition: service_started
+      - backend
+      - cadvisor
     restart: unless-stopped
 
+  # Grafana Service
   grafana:
     container_name: ${PROJECT_NAME}_grafana
-    image: grafana/grafana-oss:${GRAFANA_IMAGE_TAG:-latest}
+    image: grafana/grafana-oss:${GRAFANA_IMAGE_TAG:-11.2.0}
     user: "0"
     volumes:
-      - grafana_volume:/var/lib/grafana # Using your existing volume name for Grafana data
+      - grafana_volume:/var/lib/grafana
+      - ./devops/configs/grafana/provisioning:/etc/grafana/provisioning
     networks:
       - devops
     ports:
-      - "0.0.0.0:${GRAFANA_HOST_PORT}:3000"
+      - "0.0.0.0:${GRAFANA_HOST_PORT:-3001}:3000"
     environment:
-      - GF_SERVER_ROOT_URL=http://localhost:${GRAFANA_HOST_PORT}
+      - GF_SERVER_ROOT_URL=http://localhost:${GRAFANA_HOST_PORT:-3001}
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=${GF_PLUGINS_PREINSTALL:-grafana-clock-panel}
       - GF_LOG_LEVEL=${LOG_LEVEL:-info}
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:-admin}
-      - GF_DATASOURCES_PATH=/etc/grafana/provisioning/datasources
     depends_on:
-      prometheus:
-        condition: service_started
+      - prometheus
     restart: unless-stopped
 
-# ======================================================================================
-# LOGGING - ELK STACK 
-# ======================================================================================
+  # cAdvisor Service
+  cadvisor:
+    container_name: ${PROJECT_NAME}_cadvisor
+    image: gcr.io/cadvisor/cadvisor:${CADVISOR_IMAGE_TAG:-v0.50.0}
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - cadvisor_data:/cadvisor/storage
+    networks:
+      - devops
+    ports:
+      - "${CADVISOR_HOST_PORT:-8081}:8080"
+    command:
+      - "--storage_driver=overlayfs"
+      - "--housekeeping_interval=30s"
+    restart: unless-stopped
+    depends_on:
+      - backend
+    privileged: true # Required for cAdvisor to access system metrics
 
+  # Elasticsearch Service
   elasticsearch:
     container_name: ${PROJECT_NAME}_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION:-8.15.0}
     environment:
       - node.name=es01_chimera
       - cluster.name=chimera-elk-cluster
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=${ES_JAVA_OPTS:-Xms512m -Xmx512m}"
-      - xpack.security.enabled=${ELASTICSEARCH_DISABLE_SECURITY:-false} # Default to false for ease, true for security
-      - xpack.security.http.ssl.enabled=false # Assuming security disabled for now
-      - xpack.security.transport.ssl.enabled=false # Assuming security disabled for now
-      # - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-admin} # Add if security enabled
+      - xpack.security.enabled=${ELASTICSEARCH_DISABLE_SECURITY:-false}
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
     ulimits:
       memlock: { soft: -1, hard: -1 }
       nofile: { soft: 65535, hard: 65535 }
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
-      # - ./devops/configs/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro # Optional
     ports:
-      - "${ELASTICSEARCH_HOST_PORT_HTTP}:9200"
-      - "${ELASTICSEARCH_HOST_PORT_TRANSPORT}:9300" # For multiple nodes architecture
-    networks: [devops]
+      - "${ELASTICSEARCH_HOST_PORT_HTTP:-9200}:9200"
+      - "${ELASTICSEARCH_HOST_PORT_TRANSPORT:-9300}:9300"
+    networks:
+      - devops
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -s --fail http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
@@ -218,59 +221,54 @@ services:
       timeout: 10s
       retries: 5
 
+  # Logstash Service
   logstash:
     container_name: ${PROJECT_NAME}_logstash
-    image: docker.elastic.co/logstash/logstash:${ELASTIC_VERSION}
+    image: docker.elastic.co/logstash/logstash:${ELASTIC_VERSION:-8.15.0}
     volumes:
       - ./devops/configs/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./devops/configs/logstash/pipeline:/usr/share/logstash/pipeline:ro
     ports:
-      - "5044:5044" # For Filebeat input - now exposed for clarity, can be internal if Filebeat always in Docker
-      # - "9600:9600" # Logstash monitoring API (optional)
-    networks: [devops]
+      - "5044:5044"
+    networks:
+      - devops
     environment:
       LS_JAVA_OPTS: "${LS_JAVA_OPTS:-Xms256m -Xmx256m}"
-      # If xpack.security.enabled=true in Elasticsearch, Logstash needs credentials:
-      # ELASTICSEARCH_USERNAME: logstash_internal # Or your chosen user
-      # ELASTICSEARCH_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-changemeLogstashPassword}
     depends_on:
       elasticsearch:
         condition: service_healthy
     restart: unless-stopped
 
+  # Kibana Service
   kibana:
     container_name: ${PROJECT_NAME}_kibana
-    image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
+    image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION:-8.15.0}
     volumes:
       - ./devops/configs/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
-      - "${KIBANA_HOST_PORT}:5601"
-    networks: [devops]
+      - "${KIBANA_HOST_PORT:-5601}:5601"
+    networks:
+      - devops
     environment:
-      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
-      # If xpack.security.enabled=true in Elasticsearch, Kibana needs credentials:
-      # ELASTICSEARCH_USERNAME: kibana_system # Default Kibana system user
-      # ELASTICSEARCH_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-changemeKibanaPassword}
+      - ELASTICSEARCH_HOSTS=["http://elasticsearch:9200"]
     depends_on:
       elasticsearch:
         condition: service_healthy
     restart: unless-stopped
 
+  # Filebeat Service
   filebeat:
     container_name: ${PROJECT_NAME}_filebeat
-    image: docker.elastic.co/beats/filebeat:${ELASTIC_VERSION}
-    user: root # To access Docker logs and socket
+    image: docker.elastic.co/beats/filebeat:${ELASTIC_VERSION:-8.15.0}
+    user: root
     volumes:
       - ./devops/configs/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Mount Docker container logs dir from host
-      - /var/run/docker.sock:/var/run/docker.sock:ro         # Mount Docker socket from host
-      # - filebeat_data:/usr/share/filebeat/data # Optional: Persist Filebeat registry
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - devops # To send to Logstash
-      - backend # If reading specific app logs directly by path within another container's volume (more complex setup)
-    command: ["--strict.perms=false"] # Often needed when running as root with mounted volumes
+      - devops
+      - backend
+    command: ["--strict.perms=false"]
     depends_on:
-      - logstash # Or elasticsearch if outputting directly
-      # - backend # Ensure backend is started so its logs are available
+      - logstash
     restart: unless-stopped
-
