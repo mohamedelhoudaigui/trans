@@ -3,11 +3,11 @@ const FriendshipCtrl = require('../controllers/controllers.friendships')
 function FriendshipRoutes(fastify)
 {
 	fastify.get('/:id', {
-        // onRequest: [fastify.auth]
+        onRequest: [fastify.auth]
     }, FriendshipCtrl.GetFriends)
 
     fastify.post('/', {
-        // onRequest: [fastify.auth]
+        onRequest: [fastify.auth]
         schema: {
             body: {
                 type: 'object',
@@ -21,7 +21,7 @@ function FriendshipRoutes(fastify)
     }, FriendshipCtrl.AddFriend)
 
     fastify.post('/:id', {
-        // onRequest: [fastify.auth]
+        onRequest: [fastify.auth]
         schema: {
             body: {
                 type: 'object',
@@ -34,7 +34,7 @@ function FriendshipRoutes(fastify)
     }, FriendshipCtrl.CheckFriendship)
 
     fastify.delete('/', {
-        // onRequest: [fastify.auth]
+        onRequest: [fastify.auth]
         schema: {
             body: {
                 type: 'object',

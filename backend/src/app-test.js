@@ -119,6 +119,8 @@ listeners.forEach((signal) => {
   });
 });
 
+// create mock clients for testing
+
 async function start() {
   try {
     await fastify.listen({ host: '0.0.0.0', port: process.env.PORT || 3000 });

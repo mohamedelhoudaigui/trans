@@ -17,7 +17,7 @@ async function AuthRoutes(fastify)
     },AuthCtl.Login)
 
     fastify.post('/refresh', {
-        // onRequest: [fastify.auth]
+        onRequest: [fastify.auth]
         schema: {
             body: {
                 type: 'object',
@@ -31,7 +31,7 @@ async function AuthRoutes(fastify)
     }, AuthCtl.Refresh)
 
     fastify.delete('/logout', {
-        // onRequest: [fastify.auth]
+        onRequest: [fastify.auth]
         schema: {
             body: {
                 type: 'object',
