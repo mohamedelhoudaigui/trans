@@ -15,6 +15,19 @@ const UserCtrl = {
         const res = await UserModel.user_fetch(this.db, id)
         reply.status(res.code).send(res)
     },
+    
+    async GetMyProfile(request, reply) {
+    // The `fastify.auth` plugin has already run because we will protect this route.
+    // This means `request.user` is now available and contains the decoded JWT payload.
+        const userId = request.user.payload.id;
+
+    // The 'this' object here refers to the fastify instance, which has the db connection.
+        const res = await UserModel.user_fetch(this.db, userId);
+
+    // The user_fetch function returns the user without the password,
+    // so it's already safe to send back to the client.
+        reply.status(res.code).send(res);
+    },
 
     async CreateUser (request, reply)
     {

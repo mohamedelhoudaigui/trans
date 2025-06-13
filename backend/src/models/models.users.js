@@ -176,9 +176,7 @@ const UserModel = {
                 code: 500,
                 result: err.message
             }
-        }
-    },
-
+        } },
     async user_delete(db, user_id)
     {
         try

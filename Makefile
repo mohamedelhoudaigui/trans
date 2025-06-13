@@ -206,7 +206,7 @@ prune: ## Prune unused Docker images, build cache, and dangling volumes (DOCKER 
 .PHONY: app elk monitoring
 
 app:
-	$(COMPOSE) up -d --build frontend
+	$(COMPOSE) up -d --build frontend && make logs
 	
 elk:
 	$(COMPOSE) up -d kibana

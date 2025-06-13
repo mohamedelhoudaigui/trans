@@ -46,6 +46,10 @@ function UserRoutes(fastify)
         // onRequest: [fastify.auth]
     } , UserCtrl.DeleteUser)
 
+    fastify.get('/me', {
+        onRequest: [fastify.auth]
+    }, UserCtrl.GetMyProfile)
+
 }
 
 module.exports = UserRoutes

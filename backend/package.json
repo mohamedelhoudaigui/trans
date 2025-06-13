@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "./src/app.js",
   "scripts": {
-    "server": "node ./src/app.js",
-    "test": "node ./src/app-test.js"
+    "server": "node ./src/app.js"
   },
   "author": "",
   "license": "ISC",
