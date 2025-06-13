@@ -212,7 +212,10 @@ elk:
 	$(COMPOSE) up -d kibana
 
 monitoring:
-	$(COMPOSE) up -d --build grafana
+	# $(COMPOSE) up -d --build grafana
+	make start service=grafana
+
+base: monitoring app logs
 
 
 # --- Variable Handling for 'service', 'args', 'file' ---

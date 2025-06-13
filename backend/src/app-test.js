@@ -64,6 +64,7 @@ fastify.register(require('./plugins/plugins.auth'));
 fastify.register(fastifyJwt, {
   secret: process.env.JWT_KEY
 });
+
 fastify.register(fastifyWebSocket);
 
 // WebSocket Connection Tracking

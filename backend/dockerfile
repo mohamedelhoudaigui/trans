@@ -17,4 +17,5 @@ COPY . .
 # Define the command to run your application
 # This will execute "npm run server" which is defined in your package.json
 # as "node ./src/app.js"
-CMD ["npm", "run", "server"]
+CMD ["npm", "run", "test"]
+# CMD ["npm", "run", "server"]

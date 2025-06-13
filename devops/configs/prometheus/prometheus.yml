@@ -1,12 +1,12 @@
 
+
 global:
-  scrape_interval: 30s 
+  scrape_interval: 15s
   evaluation_interval: 15s
 
-rule_files:
-  - "alerts/*"
-  - "rules/*"
-
+# rule_files:
+#   - "alerts/*"
+#   - "rules/*"
 
 scrape_configs:
   - job_name: 'backend'
@@ -15,13 +15,11 @@ scrape_configs:
         labels:
           app: '${PROJECT_NAME}_backend'
     metrics_path: /metrics
-
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['cadvisor:8080']
         labels:
           app: '${PROJECT_NAME}_cadvisor'
-
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
