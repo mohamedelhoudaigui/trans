@@ -35,10 +35,9 @@ export default function LoginPage() {
 
       login(data.result.access_token, data.result.refresh_token);
 
-      // --- THE FIX ---
       // Force a full page reload to the homepage. This guarantees
       // that the AuthContext will re-initialize with the new tokens.
-      window.location.href = '/';
+      window.location.href = '/dashboard'; // Redirect to the dashboard or home page
 
     } catch (err: any) {
       setError(err.message);

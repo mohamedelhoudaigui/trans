@@ -56,9 +56,10 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   const handleProfileClick = () => setShowProfileMenu(!showProfileMenu);
   const handleNotificationClick = () => setShowNotifications(!showNotifications);
 
+
   const handleLogout = () => {
-    logout();
-    setShowProfileMenu(false);
+    logout(); 
+    window.location.href = '/';
   };
 
   const getStatusText = (status: 'online' | 'in-game' | 'offline'): string => 'Online';

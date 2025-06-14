@@ -9,8 +9,7 @@
 
 const ChatModel = {
 
-    chat_init()
-    {
+    chat_init() {
         return `CREATE TABLE IF NOT EXISTS chat (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			sender_id INTEGER NOT NULL,
@@ -24,196 +23,109 @@ const ChatModel = {
 		);`
     },
 
-    chat_sender_id_index()
-    {
+    chat_sender_id_index() {
         return `CREATE INDEX IF NOT EXISTS idx_chat_sender ON chat (sender_id);`;
     },
 
-	chat_recipient_id_index()
-    {
+	chat_recipient_id_index() {
         return `CREATE INDEX IF NOT EXISTS idx_chat_recipient ON chat (recipient_id);`;
     },
 
-
-    // this is for a dev purposes
-    async chat_get_all(db)
-    {
+    async chat_get_all(db) {
         try {
-            const stmt = db.prepare(`
-                    SELECT *
-                    FROM chat
-                `)
-
-            const res = await stmt.all()
-            return {
-                success: true,
-                code: 200,
-                result: res
-            }
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
+            const stmt = db.prepare(`SELECT * FROM chat`);
+            const res = await stmt.all();
+            return { success: true, code: 200, result: res };
+        } catch (err) {
+            return { success: false, code: 500, result: err.message };
         }
     },
 
-    // get chat history with someone, user id is getted from the jwt token the other is passed in params :id
-    // when you want to grab more from chat just do : offset += limit
-    async chat_get_by_id(db, sender_id, recipient_id, limit = 50, offset = 0)
-    {
-        try
-        {
+    async chat_get_by_id(db, sender_id, recipient_id, limit = 50, offset = 0) {
+        try {
             const stmt = db.prepare(`
                 SELECT * FROM chat
-                WHERE sender_id = ? AND recipient_id = ?
-				ORDER BY created_at DESC
+                WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+				ORDER BY created_at ASC
 				LIMIT ? OFFSET ?
-            `)
-
-            const res = await stmt.all(sender_id, recipient_id, limit, offset)
-
-            return {
-                success: true,
-                code: 200,
-                result: res
-            }
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
+            `);
+            const res = await stmt.all(sender_id, recipient_id, recipient_id, sender_id, limit, offset);
+            return { success: true, code: 200, result: res };
+        } catch (err) {
+            return { success: false, code: 500, result: err.message };
         }
     },
     
-    // msg data object : {sender_id(int), recipient_id(int), message(text), is_delivered(0 or 1)}
-
-    async chat_create(db, msg_data)
-    {
-        try
-        {
+    async chat_create(db, msg_data) {
+        try {
             const stmt = db.prepare(`
-                INSERT
-                INTO chat (sender_id, recipient_id, message, is_delivered, delivered_at)
+                INSERT INTO chat (sender_id, recipient_id, message, is_delivered, delivered_at)
                 VALUES (?, ?, ?, ?, ?)
-            `)
-
-            const { sender_id, recipient_id, message, is_delivered, delivered_at = null } = msg_data
-
-            const res = await stmt.run(sender_id, recipient_id, message, is_delivered, delivered_at)
-            return {
-                success: true,
-                code: 200,
-                result: res.lastInsertRowid
-            }
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
+            `);
+            const { sender_id, recipient_id, message, is_delivered, delivered_at = null } = msg_data;
+            const res = await stmt.run(sender_id, recipient_id, message, is_delivered, delivered_at);
+            return { success: true, code: 201, result: res.lastInsertRowid };
+        } catch (err) {
+            return { success: false, code: 500, result: err.message };
 		}
     },
 
-    // get unread messages so that we send them to the user when he connects back
-	async chat_get_unread(db, recipient_id)
-	{
-		try
-        {
+	async chat_get_unread(db, recipient_id) {
+		try {
             const stmt = db.prepare(`
 				SELECT * FROM chat
 				WHERE recipient_id = ? AND is_delivered = 0
 				ORDER BY created_at
-            `)
-
-            const res = await stmt.all(recipient_id)
-            return {
-                success: true,
-                code: 200,
-                result: res
-            }
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
+            `);
+            const res = await stmt.all(recipient_id);
+            return { success: true, code: 200, result: res };
+        } catch (err) {
+            return { success: false, code: 500, result: err.message };
 		}
 	},
 
-    // use this after a offline user gets all his messages
-    async chat_mark_delivered_bulk(db, recipient_id)
-    {
-        try
-        {
+    async chat_mark_delivered_bulk(db, recipient_id) {
+        try {
             const stmt = await db.prepare(`
                 UPDATE chat
-                SET is_delivered = 1,
-                    delivered_at = CURRENT_TIMESTAMP
-                WHERE recipient_id = console.log(delivered_at)ND is_delivered = 0
-            `)
-
-            const res = await stmt.run(recipient_id)
-            return {
-                success: true,
-                code: 200,
-                result: res.lastInsertRowid
-            }
-
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
+                SET is_delivered = 1, delivered_at = CURRENT_TIMESTAMP
+                WHERE recipient_id = ? AND is_delivered = 0
+            `);
+            const res = await stmt.run(recipient_id);
+            return { success: true, code: 200, result: res.changes };
+        } catch (err) {
+            return { success: false, code: 500, result: err.message };
         }
     },
 
-    async chat_get_profiles(db, user_id)
-    {
-        try
-        {
+    async chat_get_profiles(db, user_id) {
+        try {
              const stmt = db.prepare(`
                 SELECT u.id, u.name, u.email, u.avatar, u.wins, u.loses
                 FROM users u
                 WHERE u.id IN (
-                    SELECT DISTINCT recipient_id FROM chat WHERE sender_id = ?
+                    -- Get users from existing chat history
+                    SELECT recipient_id FROM chat WHERE sender_id = ?
                     UNION
-                    SELECT DISTINCT sender_id FROM chat WHERE recipient_id = ?
+                    SELECT sender_id FROM chat WHERE recipient_id = ?
+                    UNION
+                    -- Get users from the friendships table
+                    SELECT friend_id FROM friendships WHERE user_id = ?
+                    UNION
+                    SELECT user_id FROM friendships WHERE friend_id = ?
                 )
-                ORDER BY u.name; -- Optional: Order profiles, e.g., by name
-            `)
+                AND u.id != ?
+                ORDER BY u.name;
+            `);
 
-            const res = await stmt.all(user_id, user_id)
+            const res = await stmt.all(user_id, user_id, user_id, user_id, user_id);
         
-            return {
-                success: true,
-                code: 200,
-                result: res
-            }
+            return { success: true, code: 200, result: res };
         }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
+        catch (err) {
+            return { success: false, code: 500, result: err.message };
         }
     }
+};
 
-}
-
-module.exports = ChatModel
+module.exports = ChatModel;

@@ -4,6 +4,7 @@ const fastifyWebSocket = require('@fastify/websocket');
 
 const promClient = require('prom-client'); // Import Prometheus client for metrics
 
+
 require('dotenv').config();
 
 const initDb = require('./models/models.init');
@@ -12,6 +13,8 @@ const UserRoutes = require('./routes/routes.users');
 const AuthRoutes = require('./routes/routes.auth');
 const FriendshipRoutes = require('./routes/routes.friendships');
 const ChatRoutes = require('./routes/routes.chat');
+const GameRoutes = require('./routes/routes.game')
+
 
 // Prometheus Metrics Setup
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
@@ -97,6 +100,7 @@ fastify.register(UserRoutes, { prefix: '/api/users' });
 fastify.register(AuthRoutes, { prefix: '/api/auth' });
 fastify.register(FriendshipRoutes, { prefix: '/api/friend' });
 fastify.register(ChatRoutes, { prefix: '/api/chat' });
+fastify.register(GameRoutes, { prefix: '/api/game' })
 
 // CORS (remove in production)
 fastify.register(require('@fastify/cors'), {

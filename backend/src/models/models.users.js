@@ -245,7 +245,28 @@ const UserModel = {
                 result: err.message
             }
         }
-    }
+    },
+
+    async user_add_win(db, user_id) {
+        try {
+            const stmt = db.prepare(`UPDATE users SET wins = wins + 1 WHERE id = ?`);
+            await stmt.run(user_id);
+            return { success: true };
+        } catch (err) {
+            return { success: false, result: err.message };
+        }
+    },
+
+    async user_add_loss(db, user_id) {
+        try {
+            const stmt = db.prepare(`UPDATE users SET loses = loses + 1 WHERE id = ?`);
+            await stmt.run(user_id);
+            return { success: true };
+        } catch (err) {
+            return { success: false, result: err.message };
+        }
+    },
+
 }
 
 module.exports = UserModel
