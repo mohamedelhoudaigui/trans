@@ -6,9 +6,11 @@ import { jwtDecode } from 'jwt-decode';
 interface User {
   id: number; name: string; email: string; avatar: string; wins: number; loses: number;
 }
+
 interface DecodedToken {
   payload: User; iat: number; exp: number;
 }
+
 interface AuthContextType {
   user: User | null; accessToken: string | null; isAuthenticated: boolean; isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
