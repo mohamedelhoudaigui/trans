@@ -1,109 +1,125 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { jwtDecode } from 'jwt-decode'; // We need a library to decode the JWT
+import { jwtDecode } from 'jwt-decode';
 
-// Define the shape of the decoded JWT payload
-interface DecodedToken {
-  payload: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  exp: number;
-}
-
-// Define the shape of our user object
 interface User {
   id: number;
   name: string;
   email: string;
+  avatar: string;
+  // Add other user fields as needed
 }
 
-// Define the shape of our AuthContext
+interface DecodedToken {
+  payload: User;
+  iat: number;
+  exp: number;
+}
+
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (accessToken: string, refreshToken: string) => void;
+  login: (email: string, password: string) => Promise<void>; // <-- REFORGED
   logout: () => void;
 }
 
-// Create the context with a default undefined value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// --- The Provider Component ---
-// This component will wrap our entire application
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start as true to check for existing session
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Effect to initialize auth state from localStorage on component mount
   useEffect(() => {
-    // This effect runs once when the app loads to check for a persisted session
-    setIsLoading(true);
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      try {
-        const decoded = jwtDecode<DecodedToken>(token);
-        
-        // Check if the token is expired
+    try {
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        const decoded = jwtDecode<DecodedToken>(storedToken);
+        // Optional: Check if token is expired
         if (decoded.exp * 1000 > Date.now()) {
+          setAccessToken(storedToken);
           setUser(decoded.payload);
-          setAccessToken(token);
         } else {
           // Token is expired, clear it
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
-      } catch (error) {
-        console.error("Failed to decode token on load", error);
-        // Clear stored tokens if they are invalid
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
       }
-    }
-    setIsLoading(false);
-  }, []); // Empty array means run only once on mount
-
-  const login = (newAccessToken: string, newRefreshToken: string) => {
-    try {
-        const decoded = jwtDecode<DecodedToken>(newAccessToken);
-        localStorage.setItem('accessToken', newAccessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-        setAccessToken(newAccessToken);
-        setUser(decoded.payload);
     } catch (error) {
-        console.error("Failed to decode token on login", error);
+      console.error("Failed to initialize auth state:", error);
+      // Clear storage if token is invalid
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
+   * REFORGED LOGIN FUNCTION
+   * - This function now takes credentials (email, password).
+   * - It is responsible for making the API call to the backend.
+   * - On success, it receives tokens, decodes the user, and sets state.
+   * - On failure, it throws an error to be caught by the UI component.
+   */
+  const login = async (email: string, password: string) => {
+    // 1. Make the API call to your backend's login endpoint.
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    // 2. Check for failure.
+    if (!response.ok || !data.success) {
+      // Throw an error that the login page can display to the user.
+      throw new Error(data.result || 'Authentication failed.');
+    }
+
+    // 3. On success, process the tokens.
+    const { access_token: newAccessToken, refresh_token: newRefreshToken } = data.result;
+
+    try {
+      // 4. Decode the new access token to get user payload.
+      const decoded = jwtDecode<DecodedToken>(newAccessToken);
+
+      // 5. Persist tokens and update application state.
+      localStorage.setItem('accessToken', newAccessToken);
+      localStorage.setItem('refreshToken', newRefreshToken);
+      setAccessToken(newAccessToken);
+      setUser(decoded.payload);
+
+    } catch (error) {
+      // This catch block handles the case where the backend returns a malformed token.
+      console.error("Received an invalid token from the server.", error);
+      throw new Error("Authentication failed due to an invalid server response.");
     }
   };
 
   const logout = () => {
+    // Clear user state and remove tokens from storage
+    setUser(null);
+    setAccessToken(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    setAccessToken(null);
-    setUser(null);
-  };
-  
-  const value = {
-    user,
-    accessToken,
-    isAuthenticated: !!user, // Double-bang converts user object to boolean
-    isLoading,
-    login,
-    logout,
+    // NOTE: Optionally call the backend's /logout endpoint to invalidate the refresh token server-side.
   };
 
+  const isAuthenticated = !!accessToken && !!user;
+
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, accessToken, isAuthenticated, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// --- The Custom Hook ---
-// This is a helper hook to easily access the context from any component
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -2,35 +2,41 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from './contexts/AuthContext';
-import Link from 'next/link'; // Use Next.js Link for optimized navigation
+
+/**
+ * LandingPage: The primary entry point for all users.
+ * - It leverages the useAuth hook to determine authentication status.
+ * - If the user is authenticated, it performs a client-side redirect
+ *   to the '/dashboard', ensuring logged-in users bypass the landing page.
+ * - This prevents a flash of public content for authenticated users.
+ * - If the user is not authenticated, it displays the public-facing
+ *   hero section with login/register calls to action.
+ */
 
 export default function LandingPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  // --- Redirect Logic ---
-  // This effect checks the authentication status.
   useEffect(() => {
-    // Once we're sure about the auth state...
+    // As soon as we confirm the user is authenticated, redirect them.
     if (!isLoading && isAuthenticated) {
-      // ...if the user is logged in, immediately redirect them to their dashboard.
-      // They should not see the landing page.
       router.push('/dashboard');
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // This prevents a "flash" of the landing page before the redirect happens.
+  // While loading or if authenticated, render a blank loading state
+  // to prevent the landing page from flashing before the redirect.
   if (isLoading || isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-900">
-        {/* You can add a spinner component here for a better UX */}
+        {/* You can replace this with a dedicated spinner component */}
       </div>
     );
   }
 
-  // --- The Public Landing Page UI ---
-  // This content is only ever seen by guests (unauthenticated users).
+  // This UI is only ever seen by unauthenticated visitors.
   return (
     <div className="page-container">
       <div className="home-content">
