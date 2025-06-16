@@ -11,7 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 interface Notification {
   id: string;
-  type: 'Friend Request' | 'Game Invite' | 'Tournament Invitation' | 'Game Result';
+  type: 'Friend Request' | 'Game Invite' | 'Tournament Invitation' | 'Game Result'; // Maybe invite to lobby ...
   message: string;
   time: string;
 }
