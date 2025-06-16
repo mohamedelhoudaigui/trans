@@ -49,13 +49,14 @@ function check_and_sanitize (UserData)
         errors.push("password must be at least 8 characters with 1 lowercase, 1 uppercase, 1 number, and 1 symbol")
     }
 
-    if (!UserData.avatar || !validator.isURL(UserData.avatar))
-    {
-        errors.push("invalid avatar url")
-    }
+    // if (!UserData.avatar || !validator.isURL(UserData.avatar))
+    // {
+    //     errors.push("invalid avatar url")
+    // }
 
     return errors
 }
+
 
 module.exports = {
     hash_password,

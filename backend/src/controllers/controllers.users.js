@@ -29,19 +29,29 @@ const UserCtrl = {
         reply.status(res.code).send(res);
     },
 
+ /**
+     * REFORGED: CreateUser Controller
+     * - It no longer expects `avatar` in the request body.
+     * - It passes only the necessary fields to the UserModel, which now handles the default avatar.
+     */
     async CreateUser (request, reply)
     {
-        const { name, email, password, avatar } = request.body;
-        errors = check_and_sanitize({ name, email, password, avatar })
+        // Only destructure what you need and expect from the user.
+        const { name, email, password } = request.body;
+        
+        // The check_and_sanitize function will still work correctly.
+        const errors = check_and_sanitize({ name, email, password })
         if (errors.length !== 0)
         {
-            return {
+            return reply.status(400).send({ // Send response directly
                 success: false,
                 code: 400,
-                result: errors.pop()
-            }
+                result: errors.join(', ') // Join errors for a clear message
+            });
         }
-        const res = await UserModel.user_create(this.db, name, email, password, avatar)
+        
+        // Pass only the core fields. The model handles the default avatar.
+        const res = await UserModel.user_create(this.db, name, email, password)
         reply.status(res.code).send(res)
     },
 

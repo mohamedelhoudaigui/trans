@@ -135,8 +135,7 @@ const UserModel = {
             }
         }
     },
-
-    async user_create(db, name, email, password, avatar)
+    async user_create(db, name, email, password, avatar = '/avatars/default.png')
     {
         try
         {
@@ -168,7 +167,7 @@ const UserModel = {
                 return {
                     success: false,
                     code: 409,
-                    result: "unique constraine violation"
+                    result: "A user with that name or email already exists." // More descriptive error
                   }
             }
             return {
@@ -176,39 +175,7 @@ const UserModel = {
                 code: 500,
                 result: err.message
             }
-        } },
-    async user_delete(db, user_id)
-    {
-        try
-        {
-            const stmt = db.prepare(`
-                DELETE
-                FROM users
-                WHERE id = ?
-            `)
-            const result = await stmt.run(user_id);
-            if (result.changes === 0)
-            {
-                return {
-                    success: false,
-                    code: 404,
-                    result: "user not found"
-                }
-            }
-            return {
-                success: true,
-                code: 200,
-                result: result.changes
-            }
-        }
-        catch (err)
-        {
-            return {
-                success: false,
-                code: 500,
-                result: err.message
-            }
-        }
+        } 
     },
 
     async user_update(db, user_id, name, email, password, avatar)
