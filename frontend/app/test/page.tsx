@@ -1,3 +1,4 @@
+// mainly simple JSX playground and simple code examples to come back to and check.
 'use client';
 
 import { useState } from 'react';
