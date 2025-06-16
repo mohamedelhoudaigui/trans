@@ -1,15 +1,13 @@
+// frontend/app/(public)/register/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-/**
- * RegisterPage: Handles new user registration.
- * - Provides a form for user details.
- * - On successful registration, it redirects to the login page.
- * - NOTE: This is a placeholder for the actual registration API call.
- */
+// All API calls must use the single source of truth for the backend URL.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,11 +19,17 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
+    // Ensure the API URL is defined before attempting to fetch.
+    if (!API_BASE_URL) {
+      setError("Application is misconfigured. API endpoint is not set.");
+      return;
+    }
+
     try {
-      const response = await fetch('http://localhost:13333/api/users', {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, avatar: '/avatars/default.png' }),
+        body: JSON.stringify({ name, email, password }), // The avatar is handled by the backend model.
       });
 
       const data = await response.json();
@@ -33,7 +37,7 @@ export default function RegisterPage() {
         throw new Error(data.result || 'Registration failed.');
       }
 
-      // Redirect to login page on success
+      // On successful registration, guide the user to the login page.
       router.push('/login');
 
     } catch (err: any) {
@@ -47,6 +51,7 @@ export default function RegisterPage() {
             <div className="hero-container solid-effect">
                 <h1 className="hero-title text-2xl mb-4">Create Account</h1>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    {/* Form inputs remain the same */}
                     <div className="form-group">
                         <label className="form-label text-left">Name</label>
                         <div className="input-gradient">
