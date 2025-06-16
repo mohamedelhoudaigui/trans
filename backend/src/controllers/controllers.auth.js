@@ -13,42 +13,43 @@ const AuthCtl = {
     {
         const { email, password } = request.body
         const res = await UserModel.user_fetch_by_email(this.db, email)
+        
         if (res.success === false)
         {
-            return res
+            return reply.status(401).send({ success: false, code: 401, result: "Invalid email or password." });
         }
 
         const is_valid = await bcrypt.compare(password, res.result.password)
+
         if (is_valid === false)
         {
-            return {
+            return reply.status(401).send({
                 success: false,
                 code: 401,
-                result: "wrong password"
-            }
+                result: "Invalid email or password."
+            });
         }
 
-        // remove all refresh_tokens for the user
-        await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, res.result.id)
+        await RefreshtokenModel.refresh_tokens_delete_by_id(this.db, res.result.id);
 
-        const access_token = gen_jwt_token(this, res.result, process.env.ACCESS_TOKEN_EXPIRE)
-        const refresh_token = gen_jwt_token(this, res.result, process.env.REFRESH_TOKEN_EXPIRE)
-
-        const create_token = await RefreshtokenModel.refresh_tokens_create(this.db, res.result.id, refresh_token)
-        if (!create_token.success)
-        {
-            return create_token
+        const access_token = gen_jwt_token(this, res.result, process.env.ACCESS_TOKEN_EXPIRE);
+        const refresh_token = gen_jwt_token(this, res.result, process.env.REFRESH_TOKEN_EXPIRE);
+        const create_token = await RefreshtokenModel.refresh_tokens_create(this.db, res.result.id, refresh_token);
+        
+        if (!create_token.success) {
+            return reply.status(500).send(create_token);
         }
 
-        reply.status(res.code).send({
+        reply.status(200).send({
             success: true,
             code: 200,
             result: {
                 access_token: access_token,
                 refresh_token: refresh_token
             }
-        })
+        });
     },
+
 
     async Refresh(request, reply)
     {
