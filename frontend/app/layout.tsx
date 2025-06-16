@@ -1,18 +1,25 @@
 "use client";
 
-// --- FIXED --- Replaced Geist with the standard 'Inter' Google Font
 import { Inter } from "next/font/google";
 import { useState, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
-import Link from 'next/link';
 import "./globals.css";
-
-// --- NEW --- Import our AuthProvider and useAuth hook for authentication
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-// --- Font setup using Inter ---
+import Login from './components/login';
+import Register from './components/register';
+
+import Play from './components/Play';
+import Tournament from './components/Tournament';
+import Chat from './components/Chat';
+import Dashboard from './components/Dashboard';
+import Profile from './components/Profile';
+import ProfileSettings from './components/ProfileSettings';
+
+
+// Font setup
 const inter = Inter({
   subsets: ["latin"],
-  variable: '--font-inter', // Optional: if you want to use it as a CSS variable
+  variable: '--font-inter',
 });
 
 const NOTIFICATIONS_DATA = [
@@ -21,15 +28,16 @@ const NOTIFICATIONS_DATA = [
   { id: '3', type: 'Game Result', message: 'You won against alice_player!', time: '3 hours ago', read: false }
 ];
 
-// --- Your existing Navigation Context ---
+// Navigation Context
 interface NavigationContextType {
   currentPage: string;
   navigateTo: (page: string) => void;
 }
+
 const NavigationContext = createContext<NavigationContextType>({ currentPage: 'home', navigateTo: () => {} });
 export const useNavigation = () => useContext(NavigationContext);
 
-// --- Inner Layout Component ---
+// AppLayout Component
 const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { currentPage, navigateTo } = useNavigation();
@@ -39,8 +47,8 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
   const [showProfileMenu, setShowProfileMenu] = useState<boolean>(false);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
-  const [notificationCount, setNotificationCount] = useState<number>(3);
-  
+  const [notificationCount, setNotificationCount] = useState<number>(NOTIFICATIONS_DATA.length);
+
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
@@ -53,17 +61,48 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleProfileClick = () => setShowProfileMenu(!showProfileMenu);
-  const handleNotificationClick = () => setShowNotifications(!showNotifications);
+  const handleProfileClick = () => {
+    setShowProfileMenu(!showProfileMenu);
+    setShowNotifications(false); // Close notifications when opening profile
+  };
 
+  const handleNotificationClick = () => {
+    setShowNotifications(!showNotifications);
+    setShowProfileMenu(false); // Close profile when opening notifications
+  };
 
   const handleLogout = () => {
-    logout(); 
-    window.location.href = '/';
+    logout();
+    navigateTo('home'); // Redirect to home after logout
   };
 
   const getStatusText = (status: 'online' | 'in-game' | 'offline'): string => 'Online';
   const getNavLinkClass = (page: string): string => currentPage === page ? 'nav-link-active' : 'nav-link';
+
+  // Map currentPage to components
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'login':
+        return <Login />;
+      case 'register':
+        return <Register />;
+      case 'play':
+        return <Play />;
+      case 'tournaments':
+        return <Tournament />;
+      case 'chat':
+        return <Chat />;
+      case 'dashboard':
+        return <Dashboard />;
+      case 'profile':
+        return <Profile />;
+      case 'profile-settings':
+        return <ProfileSettings />;
+      case 'home':
+      default:
+        return children; // Render default content (e.g., home page)
+    }
+  };
 
   return (
     <div className="app-container">
@@ -82,10 +121,39 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
             <div className="navbar-right">
               {isAuthenticated && user ? (
                 <>
-                  <div className="notification-container" ref={notificationRef}>{/* ...notifications... */}</div>
+                  <div className="notification-container" ref={notificationRef}>
+                    <button className="notification-button" onClick={handleNotificationClick}>
+                      <span className="notification-icon">{NOTIFICATION_ICON}</span>
+                      {notificationCount > 0 && (
+                        <span className="notification-badge">{notificationCount}</span>
+                      )}
+                    </button>
+                    {showNotifications && (
+                      <div className="notification-menu">
+                        <div className="notification-header">
+                          <h3>Notifications</h3>
+                          <span className="notification-count">{notificationCount} new</span>
+                        </div>
+                        <div className="notification-list">
+                          {NOTIFICATIONS_DATA.map((notification) => (
+                            <div key={notification.id} className="notification-item">
+                              <p><strong>{notification.type}</strong></p>
+                              <p>{notification.message}</p>
+                              <span className="notification-time">{notification.time}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div className="profile-menu-container" ref={profileMenuRef}>
                     <div className="user-avatar-container" onClick={handleProfileClick}>
-                      <img src={user.avatar || DEFAULT_AVATAR} alt="Profile Avatar" className="user-avatar-image" onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}/>
+                      <img
+                        src={user.avatar || DEFAULT_AVATAR}
+                        alt="Profile Avatar"
+                        className="user-avatar-image"
+                        onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+                      />
                       <div className="status-indicator status-online"></div>
                     </div>
                     {showProfileMenu && (
@@ -104,20 +172,20 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
                 </>
               ) : (
                 <div className="flex items-center space-x-4">
-                  <Link href="/login" className="nav-link">Login</Link>
-                  <Link href="/register" className="nav-link-active">Register</Link>
+                  <button onClick={() => navigateTo('login')} className="nav-link">Login</button>
+                  <button onClick={() => navigateTo('register')} className="nav-link-active">Register</button>
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
-      <div className="layout-content">{children}</div>
+      <div className="layout-content">{renderContent()}</div>
     </div>
   );
 };
 
-// --- Root Component ---
+// RootLayout Component
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [currentPage, setCurrentPage] = useState<string>('home');
 
@@ -126,7 +194,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     window.history.pushState({ page }, '', newUrl);
     setCurrentPage(page);
   };
-  
+
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const page = event.state?.page || window.location.hash.slice(1) || 'home';
@@ -139,7 +207,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      {/* Apply the font class to the body */}
       <body className={`${inter.variable} antialiased`}>
         <AuthProvider>
           <NavigationContext.Provider value={{ currentPage, navigateTo }}>

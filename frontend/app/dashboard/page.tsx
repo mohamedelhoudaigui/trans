@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import Link from 'next/link';
 
+// import { useNavigation } from './layout';
+// import ChatComponent from './components/Chat';
+// import ProfileSettingsComponent from './components/ProfileSettings';
+// import Profile from './components/Profile';
+// import Play from './components/Play';
+// import Tournament from './components/Tournament';
+// import Dashboard from './components/Dashboard';
+
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
