@@ -38,6 +38,7 @@ const ChatCtl = {
                 await ChatModel.chat_mark_delivered_bulk(this.db, userId);
             }
 
+
             socket.on('message', async (rawMessage) => {
                 try {
                     const message = JSON.parse(rawMessage.toString());
@@ -57,7 +58,6 @@ const ChatCtl = {
                         res_socket.send(JSON.stringify(json_message));
                     }
                     
-                    // This ensures the sender's UI updates immediately.
                     socket.send(JSON.stringify(json_message));
 
                     await ChatModel.chat_create(this.db, {

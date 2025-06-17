@@ -193,20 +193,14 @@ fclean: ## Perform 'clean' and also remove volumes DEFINED IN THE COMPOSE FILE (
 	fi
 
 prune: ## Prune unused Docker images, build cache, and dangling volumes (DOCKER SYSTEM PRUNE)
-	@echo -e "$(YELLOW)Initiating Docker System Prune... This will remove unused GLOBAL Docker resources.$(NC)"
-	@read -p "Are you sure you want to prune unused Docker resources system-wide? (yes/NO): " choice; \
-	if [ "$$choice" = "yes" ]; then \
-		docker system prune -af --volumes; \
-		docker builder prune -af; \
-		echo -e "$(GREEN)Docker system prune complete.$(NC)"; \
-	else \
-		echo -e "$(YELLOW)System prune aborted by user.$(NC)"; \
-	fi
-
+	@echo -e "$(YELLOW)Initiating Docker System Prune... This will remove unused GLOBAL Docker resources. If You didnt use bind mount u are cooked.$(NC)"
+	docker system prune -af --volumes; \
+	docker builder prune -af; \
+	echo -e "$(GREEN)Docker system prune complete.$(NC)"; \
 
 .PHONY: app elk monitoring
 
-app:
+app: 
 	$(COMPOSE) up -d --build frontend && make logs
 	
 elk:

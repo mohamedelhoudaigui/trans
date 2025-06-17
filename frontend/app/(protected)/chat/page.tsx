@@ -4,143 +4,88 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useWebSocket, ConnectionStatus } from '@/app/hooks/useWebSocket';
 
-// ======================================================================================
-// I. DATA CONTRACTS & INTERFACES
-// ======================================================================================
-
 interface ConversationPartner {
-  id: number;
-  name: string;
-  avatar: string;
-  status: 'online' | 'in-game' | 'offline';
+  id: number; name: string; avatar: string; status: 'online' | 'in-game' | 'offline';
 }
-
 interface Message {
-  from: number;
-  to: number;
-  content: string;
-  timestamp: string;
+  from: number; to: number; content: string; timestamp: string;
 }
-
-// ======================================================================================
-// II. CHAT PAGE COMPONENT
-// ======================================================================================
 
 export default function ChatPage() {
   const { user, accessToken, isLoading: isAuthLoading } = useAuth();
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  // --- State Management ---
   const [partners, setPartners] = useState<ConversationPartner[]>([]);
   const [activePartner, setActivePartner] = useState<ConversationPartner | null>(null);
   const [messageHistory, setMessageHistory] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // --- WebSocket Connection ---
-  // Our custom hook manages the live WebSocket connection and incoming messages.
   const { messages: liveMessages, sendMessage, connectionStatus } = useWebSocket(accessToken);
-
-  // Ref for auto-scrolling to the latest message.
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // --- Data Fetching Effects ---
-
-  // 1. Fetch the list of conversation partners on component mount.
+  // Effect to fetch conversation partners
   useEffect(() => {
     if (isAuthLoading || !accessToken) return;
-
     const fetchPartners = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/chat/`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` },
-        });
+        const response = await fetch(`${API_BASE_URL}/api/chat/`, { headers: { 'Authorization': `Bearer ${accessToken}` }});
         const data = await response.json();
         if (data.success) {
-          // TODO: Real-time user status should be implemented. For now, default to online.
           const partnersWithStatus = data.result.map((p: any) => ({ ...p, status: 'online' }));
           setPartners(partnersWithStatus);
-        } else {
-          throw new Error(data.result || 'Failed to fetch partners.');
-        }
-      } catch (err: any) {
-        console.error("Error fetching chat partners:", err);
-        setError("Could not load your conversations.");
-      }
+        } else { throw new Error(data.result || 'Failed to fetch partners.'); }
+      } catch (err: any) { console.error("Error fetching chat partners:", err); setError("Could not load conversations."); }
     };
-    
     fetchPartners();
   }, [isAuthLoading, accessToken, API_BASE_URL]);
 
-  // 2. Fetch the specific chat history whenever the active partner changes.
+  // Effect to fetch historical messages for the active partner
   useEffect(() => {
-    if (!activePartner || !accessToken) {
-      setMessageHistory([]); // Clear history if no partner is selected
-      return;
-    }
-
+    if (!activePartner || !accessToken) { setMessageHistory([]); return; }
     const fetchChatHistory = async (partnerId: number) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/chat/${partnerId}`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` },
-        });
+        const response = await fetch(`${API_BASE_URL}/api/chat/${partnerId}`, { headers: { 'Authorization': `Bearer ${accessToken}` }});
         const data = await response.json();
         setMessageHistory(data.success ? data.result : []);
-      } catch (error) {
-        console.error("Error fetching chat history:", error);
-        setMessageHistory([]);
-      }
+      } catch (error) { console.error("Error fetching chat history:", error); setMessageHistory([]); }
     };
-
     fetchChatHistory(activePartner.id);
   }, [activePartner, accessToken, API_BASE_URL]);
 
-
-  // --- User Actions ---
+  // SIMPLIFIED: Send message and do nothing else. The hook will update state.
   const handleSendMessage = () => {
     if (!newMessage.trim() || !activePartner || !user) return;
-    
-    // Send message via WebSocket.
     sendMessage({ to: activePartner.id, content: newMessage });
-    
-    // Clear the input box immediately for a fluid user experience.
     setNewMessage('');
   };
 
-
   // --- Rendering Logic ---
 
-  // Combine historical messages with new live messages.
-  const combinedMessages = [...messageHistory, ...liveMessages];
+  // Merge historical and live messages.
+  const allMessages = [...messageHistory, ...liveMessages];
 
-  // Filter the combined list to only show messages relevant to the active conversation.
-  const activeChatMessages = combinedMessages.filter(
+  // Filter for the active conversation.
+  const activeChatMessages = allMessages.filter(
     (msg) => 
       (msg.from === user?.id && msg.to === activePartner?.id) ||
       (msg.from === activePartner?.id && msg.to === user?.id)
   );
-  
-  // Auto-scroll to the latest message whenever new messages are added.
+
+  // This effect now correctly scrolls on new live messages or history changes.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeChatMessages]);
+  }, [activeChatMessages.length]); // Trigger on change in number of messages
 
-  if (isAuthLoading) {
-    return <div className="page-container flex items-center justify-center"><p className="text-white">Loading Chat...</p></div>;
-  }
-
-  if (error) {
-    return <div className="page-container flex items-center justify-center"><p className="text-red-500">{error}</p></div>;
-  }
+  if (isAuthLoading) { return <div className="page-container flex items-center justify-center"><p className="text-white">Loading Chat...</p></div>; }
+  if (error) { return <div className="page-container flex items-center justify-center"><p className="text-red-500">{error}</p></div>; }
   
   return (
     <div className="page-container">
       <div className="text-center text-sm text-gray-400 mb-2">
         Connection Status: <span className={connectionStatus === ConnectionStatus.Connected ? 'text-green-400' : 'text-yellow-400'}>{connectionStatus}</span>
       </div>
-
       <div className="chat-main-container">
-        {/* Sidebar for Conversation Partners */}
         <div className="sidebar-gradient">
           <div className="sidebar solid-effect">
             <div className="sidebar-header"><h2 className="sidebar-title">Conversations</h2></div>
@@ -154,8 +99,6 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
-        
-        {/* Main Chat Area */}
         <div className="chat-area-gradient">
           <div className="chat-area solid-effect">
             {activePartner ? (
@@ -168,7 +111,7 @@ export default function ChatPage() {
                 </div>
                 <div className="messages-container">
                   {activeChatMessages.map((msg, index) => (
-                    <div key={index} className={`message-wrapper ${msg.from === user?.id ? 'sent' : 'received'}`}>
+                    <div key={`${msg.timestamp}-${index}`} className={`message-wrapper ${msg.from === user?.id ? 'sent' : 'received'}`}>
                       <div className="message-gradient">
                         <div className="message-bubble">
                           <p className="message-content">{msg.content}</p>
@@ -192,9 +135,7 @@ export default function ChatPage() {
                       />
                     </div>
                     <div className="button-gradient">
-                      <button onClick={handleSendMessage} className="btn">
-                        Send
-                      </button>
+                      <button onClick={handleSendMessage} className="btn">Send</button>
                     </div>
                   </div>
                 </div>

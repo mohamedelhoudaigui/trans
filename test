@@ -1,0 +1,301 @@
+
+# AI Project Analysis - scripts
+- Generated on: Tue Jun 17 04:28:24 PM +01 2025
+- System: Linux 6.12.33-1-lts x86_64
+- Arch Linux: 1799 packages installed
+- Directory: /home/mlamkadm/ai-repos/agents/agent-lib/config/agents/standard-agent-MK1/tools/scripts
+
+## Directory Structure
+```
+.
+├── bash
+│   └── execute_bash.sh
+└── python
+    ├── build.txt
+    └── generic_python_executor.py
+```
+
+## Project Statistics
+- Total Files: 6
+- Total Lines of Code: 264
+- Languages: .txt(1),.sh(1),.py(1)
+
+## Project Files
+
+### File: bash/execute_bash.sh
+```bash
+#!/bin/bash
+# execute_bash.sh
+# Executes a shell command provided as the first argument (JSON string containing the command).
+
+
+PARAMS_JSON="$1"
+
+if [ -z "$PARAMS_JSON" ]; then
+  echo "Error: No parameters JSON string provided to execute_bash.sh." >&2
+  exit 1
+fi
+
+# Extract command using jq. Ensure jq is installed.
+COMMAND_TO_EXECUTE=$(echo "$PARAMS_JSON" | jq -r .command)
+
+if [ "$COMMAND_TO_EXECUTE" == "null" ] || [ -z "$COMMAND_TO_EXECUTE" ]; then
+    echo "Error: 'command' field missing or empty in JSON parameters." >&2
+    exit 1
+fi
+
+# For security, it's generally safer NOT to use 'eval' if possible.
+# If the command is simple and doesn't involve complex shell metacharacters
+# that are part of the command itself (rather than arguments),
+# you might be able to execute it more directly.
+# However, for a general purpose "bash" tool, 'eval' is often used
+# with the understanding that the input command is trusted or pre-validated.
+
+# Outputting a marker for easier parsing by the agent if needed.
+echo "--- BASH TOOL EXECUTION START ---" >&2
+eval "$COMMAND_TO_EXECUTE"
+EXIT_STATUS=$?
+echo "--- BASH TOOL EXECUTION END (Exit Status: $EXIT_STATUS) ---" >&2
+
+exit $EXIT_STATUS
+```
+
+### File: python/build.txt
+```
+{
+  "relic_name": "universal-ai-gateway",
+  "version": "0.1.0",
+  "description": "A FastAPI-based API gateway to route inference requests to various free-tier AI model providers (e.g., Gemini, Groq - simulated). Actual API call logic is stubbed and requires user implementation.",
+  "bootstrap_script_content": null,
+  "artifacts": [
+    {
+      "title": "Makefile",
+      "path": "Makefile",
+      "contentType": "text/plain",
+      "content": "SHELL := /bin/bash\nPROJECT_NAME ?= universal-ai-gateway\nDOCKER_IMAGE_NAME ?= $(PROJECT_NAME)\nTAG ?= latest\nAPP_SERVICE_NAME ?= gateway_app\n\nAPP_PORT = $(shell grep ^APP_PORT= .env 2>/dev/null | cut -d '=' -f2 | tr -d '[:space:]' || echo 8011)\n\n.PHONY: all build up down logs clean validate-env help\n\nall: build\n\nbuild:\n\t@echo \"Building Docker image $(DOCKER_IMAGE_NAME):$(TAG)...\"\n\t@docker build -t $(DOCKER_IMAGE_NAME):$(TAG) .\n\nvalidate-env:\n\t@if [ ! -f .env ]; then \\\n\t\techo \"INFO: .env file not found.\"; \\\n\t\tif [ ! -f .env.example ]; then \\\n\t\t\techo \"ERROR: .env.example is also missing. Cannot proceed without configuration.\" >&2; \\\n\t\t\texit 1; \\\n\t\tfi; \\\n\t\t_USER_CHOICE=\"\"; \\\n\t\tread -r -p \"Do you want to copy .env.example to .env? (Y/n) \" _USER_CHOICE; \\\n\t\tif [[ \"$$_USER_CHOICE\" == \"Y\" || \"$$_USER_CHOICE\" == \"y\" || \"$$_USER_CHOICE\" == \"\" ]]; then \\\n\t\t\tcp .env.example .env; \\\n\t\t\techo \".env.example copied to .env. Please review/customize API keys and other settings.\"; \\\n\t\telse \\\n\t\t\techo \"Skipping .env creation. Please ensure environment variables are set (e.g., API keys).\"; \\\n\t\tfi; \\\n\telse \\\n\t\techo \"INFO: .env file found.\"; \\\n\tfi\n\nup: validate-env\n\t@echo \"Starting $(PROJECT_NAME) via Docker Compose... App expected on http://localhost:$(APP_PORT)\"\n\t@docker-compose up -d\n\ndown:\n\t@echo \"Stopping $(PROJECT_NAME)...\"\n\t@docker-compose down\n\nlogs:\n\t@echo \"Showing logs for $(APP_SERVICE_NAME) service...\"\n\t@docker-compose logs -f $(APP_SERVICE_NAME)\n\nclean:\n\t@echo \"Cleaning up $(PROJECT_NAME) Docker environment...\"\n\t@docker-compose down -v --remove-orphans\n\t@(docker rmi $(DOCKER_IMAGE_NAME):$(TAG) 2>/dev/null || echo \"Image $(DOCKER_IMAGE_NAME):$(TAG) not found or already removed.\")\n\t@echo \"Local build artifacts (pycache, etc.) are not removed by this target.\"\n\t@echo \"Clean complete.\"\n\nhelp:\n\t@echo \"Available commands for $(PROJECT_NAME):\"\n\t@echo \"  make build         - Build the Docker image\"\n\t@echo \"  make validate-env  - Check/create .env from .env.example\"\n\t@echo \"  make up            - Start the application (calls validate-env)\"\n\t@echo \"  make down          - Stop the application\"\n\t@echo \"  make logs          - View application logs\"\n\t@echo \"  make clean         - Clean Docker containers, volumes, and optionally the image.\"\n\t@echo \"  make help          - Show this help message\"\n"
+    },
+    {
+      "title": "Dockerfile",
+      "path": "Dockerfile",
+      "contentType": "text/plain",
+      "content": "FROM python:3.11-slim\n\nWORKDIR /app\n\nENV PYTHONDONTWRITEBYTECODE 1\nENV PYTHONUNBUFFERED 1\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir --upgrade pip && \\\n    pip install --no-cache-dir -r requirements.txt\n\nCOPY ./app /app/app\nCOPY .env.example /app/.env.example\n\n# The application will run as root within the container by default with python:slim.\n# If specific user context is needed, add USER directive and handle permissions.\n\nEXPOSE 8011\n\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8011\"]"
+    },
+    {
+      "title": "docker-compose.yml",
+      "path": "docker-compose.yml",
+      "contentType": "text/yaml",
+      "content": "version: '3.8'\n\nservices:\n  gateway_app:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    image: universal-ai-gateway:latest\n    container_name: universal-ai-gateway-app\n    restart: unless-stopped\n    ports:\n      - \"${APP_PORT:-8011}:8011\"\n    volumes:\n      - ./app:/app/app # For live code changes in development\n    env_file:\n      - .env\n    environment:\n      - APP_PORT_INTERNAL=8011\n"
+    },
+    {
+      "title": "requirements.txt",
+      "path": "requirements.txt",
+      "contentType": "text/plain",
+      "content": "fastapi==0.111.0\nuvicorn[standard]==0.29.0\npython-dotenv==1.0.1\npydantic==2.7.1\npydantic-settings==2.2.1\nhttpx==0.27.0 # For making outbound API calls from connectors\n\n# Add SDKs for specific AI providers here as they are implemented\n# Example: google-generativeai for Gemini\n# Example: groq for GroqCloud (if they provide a Python SDK)\n"
+    },
+    {
+      "title": ".env.example",
+      "path": ".env.example",
+      "contentType": "text/plain",
+      "content": "# Universal AI Gateway Configuration\nAPP_PORT=8011\nAPP_NAME=\"Universal AI Gateway\"\nAPP_VERSION=\"0.1.0\"\nLOG_LEVEL=INFO # DEBUG, INFO, WARNING, ERROR, CRITICAL\n\n# CORS Configuration (comma-separated list of allowed origins)\nCORS_ALLOWED_ORIGINS=http://localhost,http://localhost:8011,http://127.0.0.1:8011\n\n# --- Provider Specific Configurations (User MUST fill these for actual use) --- \n\n# Google Gemini (via AI Studio or Vertex AI free tier)\n# Ensure the key has permissions for the desired Gemini models.\nGEMINI_API_KEY=\"YOUR_GEMINI_API_KEY_HERE\"\n# GEMINI_API_ENDPOINT=\"https://generativelanguage.googleapis.com\" # Default for AI Studio\n# Or for Vertex AI: GEMINI_API_ENDPOINT=\"https://{REGION}-aiplatform.googleapis.com\" \n# Example: GEMINI_DEFAULT_MODEL=\"gemini-1.5-flash-latest\"\n\n# GroqCloud (if using their API directly)\nGROQ_API_KEY=\"YOUR_GROQ_API_KEY_HERE\"\n# GROQ_API_ENDPOINT=\"https://api.groq.com/openai/v1\" # Groq uses an OpenAI-compatible endpoint\n# Example: GROQ_DEFAULT_MODEL=\"llama3-8b-8192\"\n\n# Placeholder for another free provider\n# OTHER_FREE_PROVIDER_API_KEY=\"YOUR_OTHER_KEY\"\n# OTHER_FREE_PROVIDER_ENDPOINT=\"https://api.otherprovider.com/v1\"\n# OTHER_FREE_PROVIDER_DEFAULT_MODEL=\"some-model\"\n\n# Default timeout for outbound API calls in seconds\nDEFAULT_PROVIDER_TIMEOUT=30\n"
+    },
+    {
+      "title": ".gitignore",
+      "path": ".gitignore",
+      "contentType": "text/plain",
+      "content": "# Python\n__pycache__/\n*.py[cod]\n*$py.class\n*.egg-info/\ndist/\nbuild/\nwheels/\n\n# Environments\n.env\n.env.*\n.venv\nvenv/\nenv/\n\n# IDEs and editors\n.idea/\n.vscode/*\n!.vscode/settings.json\n!.vscode/launch.json\n*.sublime-project\n*.sublime-workspace\n\n# Logs\n*.log\nlogs/\n\n# OS-specific\n.DS_Store\nThumbs.db\n"
+    },
+    {
+      "title": "app/__init__.py",
+      "path": "app/__init__.py",
+      "contentType": "text/plain",
+      "content": "# Universal AI Gateway Application Package\n"
+    },
+    {
+      "title": "app/main.py",
+      "path": "app/main.py",
+      "contentType": "text/x-python",
+      "content": "import logging\nimport os\nfrom contextlib import asynccontextmanager\n\nfrom fastapi import FastAPI, Request, HTTPException\nfrom fastapi.responses import JSONResponse\nfrom fastapi.middleware.cors import CORSMiddleware\n\nfrom app.config_gateway import settings\nfrom app.api.inference_routes import router as inference_router\nfrom app.api.system_routes import router as system_router\nfrom app.models_gateway import ErrorDetailResponse\n\nlog_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)\nlogging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')\nlogger = logging.getLogger(__name__)\n\n@asynccontextmanager\nasync def lifespan(app_instance: FastAPI):\n    logger.info(f\"Starting {settings.APP_NAME} v{settings.APP_VERSION}...\")\n    logger.info(f\"Allowed CORS origins: {settings.CORS_ALLOWED_ORIGINS_LIST}\")\n    logger.info(f\"Default provider timeout: {settings.DEFAULT_PROVIDER_TIMEOUT}s\")\n    # Log available (stubbed) providers based on config presence (not actual connectivity yet)\n    if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != \"YOUR_GEMINI_API_KEY_HERE\":\n        logger.info(\"Gemini provider (stub) configured.\")\n    else:\n        logger.warning(\"Gemini provider API key not configured. Calls to Gemini will be fully simulated.\")\n    if settings.GROQ_API_KEY and settings.GROQ_API_KEY != \"YOUR_GROQ_API_KEY_HERE\":\n        logger.info(\"Groq provider (stub) configured.\")\n    else:\n        logger.warning(\"Groq provider API key not configured. Calls to Groq will be fully simulated.\")\n    yield\n    logger.info(f\"Shutting down {settings.APP_NAME}.\")\n\napp = FastAPI(\n    title=settings.APP_NAME,\n    version=settings.APP_VERSION,\n    lifespan=lifespan,\n    openapi_url=\"/api/v1/openapi.json\",\n    docs_url=\"/api/v1/docs\",\n    redoc_url=\"/api/v1/redoc\"\n)\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=settings.CORS_ALLOWED_ORIGINS_LIST,\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\n# API Routers\napp.include_router(system_router, prefix=\"/system\", tags=[\"System & Capabilities\"])\napp.include_router(inference_router, prefix=\"/api/v1/inference\", tags=[\"AI Inference\"])\n\n@app.get(\"/\", tags=[\"Root\"], include_in_schema=False)\nasync def read_root():\n    return {\n        \"message\": f\"Welcome to {settings.APP_NAME} v{settings.APP_VERSION}\",\n        \"documentation\": \"/api/v1/docs\"\n    }\n\n# Exception Handlers\n@app.exception_handler(HTTPException)\nasync def custom_http_exception_handler(request: Request, exc: HTTPException):\n    return JSONResponse(\n        status_code=exc.status_code,\n        content=ErrorDetailResponse(detail=exc.detail).model_dump(),\n    )\n\n@app.exception_handler(Exception)\nasync def generic_exception_handler(request: Request, exc: Exception):\n    logger.error(f\"Unhandled exception during request to '{request.url.path}': {exc}\", exc_info=True)\n    return JSONResponse(\n        status_code=500,\n        content=ErrorDetailResponse(detail=\"An unexpected internal server error occurred on the AI Gateway.\").model_dump(),\n    )\n\nif __name__ == \"__main__\":\n    import uvicorn\n    run_port = int(os.getenv(\"APP_PORT\", str(settings.APP_PORT_INTERNAL)))\n    logger.info(f\"Running Uvicorn development server locally on http://0.0.0.0:{run_port}\")\n    uvicorn.run(\"app.main:app\", host=\"0.0.0.0\", port=run_port, log_level=settings.LOG_LEVEL.lower(), reload=True)\n"
+    },
+    {
+      "title": "app/config_gateway.py",
+      "path": "app/config_gateway.py",
+      "contentType": "text/x-python",
+      "content": "from pydantic_settings import BaseSettings, SettingsConfigDict\nfrom typing import List, Optional\n\nclass Settings(BaseSettings):\n    APP_NAME: str = \"Universal AI Gateway\"\n    APP_VERSION: str = \"0.1.0\"\n    APP_PORT_INTERNAL: int = 8011 # Port uvicorn listens on *inside* the container\n    LOG_LEVEL: str = \"INFO\"\n\n    CORS_ALLOWED_ORIGINS: str = \"http://localhost,http://localhost:8011,http://127.0.0.1:8011\"\n\n    # Provider API Keys - User MUST provide these in .env for actual integration\n    GEMINI_API_KEY: Optional[str] = None\n    GROQ_API_KEY: Optional[str] = None\n    # OTHER_FREE_PROVIDER_API_KEY: Optional[str] = None\n\n    # Provider API Endpoints (can be overridden in .env if necessary)\n    GEMINI_API_ENDPOINT: str = \"https://generativelanguage.googleapis.com/v1beta/models\"\n    GROQ_API_ENDPOINT: str = \"https://api.groq.com/openai/v1\"\n    # OTHER_FREE_PROVIDER_ENDPOINT: Optional[str] = None\n\n    # Default models per provider (can be overridden in .env)\n    GEMINI_DEFAULT_MODEL: str = \"gemini-1.5-flash-latest\"\n    GROQ_DEFAULT_MODEL: str = \"llama3-8b-8192\" # Groq model identifier\n    # OTHER_FREE_PROVIDER_DEFAULT_MODEL: Optional[str] = None\n\n    DEFAULT_PROVIDER_TIMEOUT: int = 30 # Default timeout for HTTP requests to AI providers\n\n    @property\n    def CORS_ALLOWED_ORIGINS_LIST(self) -> List[str]:\n        if not self.CORS_ALLOWED_ORIGINS:\n            return []\n        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(',') if origin.strip()]\n\n    model_config = SettingsConfigDict(\n        env_file=\".env\",\n        env_file_encoding=\"utf-8\",\n        extra='ignore'\n    )\n\nsettings = Settings()\n"
+    },
+    {
+      "title": "app/models_gateway.py",
+      "path": "app/models_gateway.py",
+      "contentType": "text/x-python",
+      "content": "from pydantic import BaseModel, Field\nfrom typing import List, Optional, Dict, Any, Literal\nimport datetime\n\n# --- Unified Request Models ---_-\nclass ChatMessage(BaseModel):\n    role: Literal[\"user\", \"assistant\", \"system\"] = \"user\"\n    content: str\n\nclass ChatCompletionRequest(BaseModel):\n    provider: str = Field(..., description=\"Identifier for the AI provider (e.g., 'gemini', 'groq', 'openai_compatible').\")\n    model: Optional[str] = Field(None, description=\"Specific model name for the provider (e.g., 'gemini-1.5-flash-latest', 'llama3-8b-8192'). If None, provider's default is used.\")\n    messages: List[ChatMessage]\n    max_tokens: Optional[int] = Field(150, gt=0, description=\"Maximum number of tokens to generate.\")\n    temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0, description=\"Sampling temperature.\")\n    stream: Optional[bool] = Field(False, description=\"Whether to stream the response (Not fully supported in this stub version for all providers).\")\n    # Add other common parameters like top_p, presence_penalty, etc. as needed\n\n# --- Unified Response Models ---_-\nclass ChatCompletionChoice(BaseModel):\n    index: int\n    message: ChatMessage\n    finish_reason: Optional[str] = None # e.g., \"stop\", \"length\", \"content_filter\"\n\nclass UsageStats(BaseModel):\n    prompt_tokens: Optional[int] = None\n    completion_tokens: Optional[int] = None\n    total_tokens: Optional[int] = None\n\nclass ChatCompletionResponse(BaseModel):\n    id: str # A unique ID for the response, generated by the gateway or provider\n    object: str = \"chat.completion\" # OpenAI-like object type\n    created: int = Field(default_factory=lambda: int(datetime.datetime.now(datetime.timezone.utc).timestamp()))\n    model: str # The model that handled the request\n    provider: str # The provider that handled the request\n    choices: List[ChatCompletionChoice]\n    usage: Optional[UsageStats] = None\n    # system_fingerprint: Optional[str] = None # If provider includes it\n\n# --- Error & System Models ---_-\nclass ErrorDetailResponse(BaseModel):\n    detail: Any # Can be string or more structured error from provider\n\nclass HealthStatus(BaseModel):\n    app_name: str\n    version: str\n    status: str = \"healthy\"\n    timestamp: datetime.datetime\n    # available_providers: List[str] # Could list configured providers\n\nclass ProviderCapability(BaseModel):\n    provider_id: str\n    status: Literal[\"configured\", \"key_missing\", \"simulated\", \"error\"]\n    default_model: Optional[str] = None\n    notes: Optional[str] = None\n\nclass SystemCapabilitiesResponse(BaseModel):\n    app_name: str\n    version: str\n    description: str\n    supported_providers: List[ProviderCapability]\n    endpoints: List[Dict[str, str]]\n"
+    },
+    {
+      "title": "app/services_gateway/__init__.py",
+      "path": "app/services_gateway/__init__.py",
+      "contentType": "text/plain",
+      "content": "# AI Provider Connector Services\n"
+    },
+    {
+      "title": "app/services_gateway/base_connector.py",
+      "path": "app/services_gateway/base_connector.py",
+      "contentType": "text/x-python",
+      "content": "from abc import ABC, abstractmethod\nimport httpx\nimport logging\nfrom typing import Any, Dict\n\nfrom app.models_gateway import ChatCompletionRequest, ChatCompletionResponse\nfrom app.config_gateway import settings\n\nlogger = logging.getLogger(__name__)\n\nclass BaseAIConnector(ABC):\n    def __init__(self, provider_id: str, api_key: str = None, api_endpoint: str = None, default_model: str = None):\n        self.provider_id = provider_id\n        self.api_key = api_key\n        self.api_endpoint = api_endpoint\n        self.default_model = default_model\n        self.timeout = settings.DEFAULT_PROVIDER_TIMEOUT\n\n    @abstractmethod\n    async def create_chat_completion(\n        self, \n        request: ChatCompletionRequest\n    ) -> ChatCompletionResponse:\n        \"\"\"Abstract method to create a chat completion using the provider's API.\"\"\"\n        pass\n\n    async def _make_http_request(\n        self, \n        method: str, \n        url: str, \n        headers: Dict[str, str] = None, \n        json_data: Dict[str, Any] = None,\n        params: Dict[str, Any] = None\n    ) -> httpx.Response:\n        async with httpx.AsyncClient(timeout=self.timeout) as client:\n            try:\n                logger.debug(f\"Making {method} request to {url} with headers: {headers} and json: {json_data}\")\n                response = await client.request(method, url, headers=headers, json=json_data, params=params)\n                response.raise_for_status() # Raise an exception for 4xx/5xx status codes\n                return response\n            except httpx.HTTPStatusError as e:\n                logger.error(f\"HTTP error for {self.provider_id}: {e.response.status_code} - {e.response.text}\")\n                # Re-raise with more context or a custom exception\n                raise Exception(f\"{self.provider_id} API Error: {e.response.status_code} - {e.response.text}\") from e\n            except httpx.RequestError as e:\n                logger.error(f\"Request error for {self.provider_id} to {url}: {e}\")\n                raise Exception(f\"{self.provider_id} Request Error: {str(e)}\") from e\n            except Exception as e:\n                logger.error(f\"Unexpected error during HTTP request for {self.provider_id}: {e}\")\n                raise Exception(f\"Unexpected error contacting {self.provider_id}: {str(e)}\") from e\n"
+    },
+    {
+      "title": "app/services_gateway/gemini_connector.py",
+      "path": "app/services_gateway/gemini_connector.py",
+      "contentType": "text/x-python",
+      "content": "import logging\nimport uuid\nimport datetime\nfrom typing import List, Dict, Any\n\nfrom app.models_gateway import ChatCompletionRequest, ChatCompletionResponse, ChatMessage, ChatCompletionChoice, UsageStats\nfrom app.services_gateway.base_connector import BaseAIConnector\nfrom app.config_gateway import settings\n\nlogger = logging.getLogger(__name__)\n\nclass GeminiConnector(BaseAIConnector):\n    def __init__(self):\n        super().__init__(\n            provider_id=\"gemini\",\n            api_key=settings.GEMINI_API_KEY,\n            api_endpoint=settings.GEMINI_API_ENDPOINT,\n            default_model=settings.GEMINI_DEFAULT_MODEL\n        )\n\n    async def create_chat_completion(\n        self, \n        request: ChatCompletionRequest\n    ) -> ChatCompletionResponse:\n        if not self.api_key or self.api_key == \"YOUR_GEMINI_API_KEY_HERE\":\n            logger.warning(\"SIMULATING Gemini call due to missing API key.\")\n            return self._simulate_response(request)\n\n        model_to_use = request.model or self.default_model\n        # Gemini API endpoint usually includes the model: {API_ENDPOINT}/{model}:generateContent\n        # Or for Vertex AI: {API_ENDPOINT}/v1/projects/{PROJECT_ID}/locations/{REGION}/publishers/google/models/{MODEL_ID}:streamGenerateContent\n        # This needs to be adjusted based on whether it's AI Studio or Vertex AI model path.\n        # Assuming AI Studio style for this stub:\n        if not model_to_use:\n             raise ValueError(\"Gemini model not specified and no default configured.\")\n\n        # For AI Studio format like \"models/gemini-1.5-flash-latest\"\n        if not model_to_use.startswith(\"models/\"):\n            model_path_segment = f\"models/{model_to_use}\"\n        else:\n            model_path_segment = model_to_use\n        \n        full_api_url = f\"{self.api_endpoint}/{model_path_segment}:generateContent?key={self.api_key}\"\n\n        # Transform messages to Gemini's format\n        gemini_contents = []\n        for msg in request.messages:\n            # Gemini alternates roles, usually 'user' and 'model'. 'system' needs careful handling.\n            # For simplicity, mapping 'assistant' to 'model' and 'system' to a 'user' preamble if not supported directly.\n            role = msg.role\n            if role == \"assistant\":\n                role = \"model\"\n            elif role == \"system\": # System prompts are handled differently in Gemini, often as first user message or specific config\n                # This is a simplified mapping. Real Gemini needs structured system instructions.\n                gemini_contents.append({\"role\": \"user\", \"parts\": [{\"text\": \"System Instruction: \" + msg.content}]})\n                continue # Skip adding it as a separate message if handled as a preamble\n            gemini_contents.append({\"role\": role, \"parts\": [{\"text\": msg.content}]})\n        \n        # Basic generation config\n        generation_config = {\n            \"temperature\": request.temperature,\n            \"maxOutputTokens\": request.max_tokens,\n            # \"topP\": request.top_p, # if available and desired\n            # \"topK\": ..., \n        }\n\n        payload = {\n            \"contents\": gemini_contents,\n            \"generationConfig\": generation_config\n        }\n\n        try:\n            # logger.debug(f\"Gemini Request URL: {full_api_url}\")\n            # logger.debug(f\"Gemini Request Payload: {payload}\")\n            # http_response = await self._make_http_request(\"POST\", full_api_url, json_data=payload)\n            # response_data = http_response.json()\n            # logger.debug(f\"Gemini Raw Response: {response_data}\")\n            # return self._parse_gemini_response(response_data, request, model_to_use)\n            \n            # ---- SIMULATION BLOCK ----\n            logger.warning(f\"SIMULATING actual Gemini API call to {full_api_url}\")\n            await asyncio.sleep(0.2) # Simulate network delay\n            return self._simulate_response(request, model_to_use)\n            # ---- END SIMULATION BLOCK ----\n\n        except Exception as e:\n            logger.error(f\"Error in Gemini connector: {e}\", exc_info=True)\n            # Fallback to simulation on error during development if desired\n            # return self._simulate_response(request, model_to_use, error_message=str(e))\n            raise HTTPException(status_code=500, detail=f\"Gemini API interaction failed: {str(e)}\")\n\n    def _parse_gemini_response(self, response_data: Dict[str, Any], original_request: ChatCompletionRequest, model_used: str) -> ChatCompletionResponse:\n        # This needs to correctly parse the actual Gemini API response structure.\n        # Example structure (simplified, check Gemini docs for exact format):\n        # response_data = {\n        #   \"candidates\": [\n        #     {\n        #       \"content\": {\"parts\": [{\"text\": \"Generated text here...\"}], \"role\": \"model\"},\n        #       \"finishReason\": \"STOP\", \n        #       \"index\": 0\n        #     }\n        #   ],\n        #   \"usageMetadata\": {\"promptTokenCount\": X, \"candidatesTokenCount\": Y, \"totalTokenCount\": Z}\n        # }\n        choices = []\n        if response_data.get(\"candidates\"): \n            for idx, candidate in enumerate(response_data[\"candidates\"]):\n                if candidate.get(\"content\") and candidate[\"content\"].get(\"parts\"):\n                    text_content = candidate[\"content\"][\"parts\"][0].get(\"text\", \"\")\n                    choices.append(ChatCompletionChoice(\n                        index=candidate.get(\"index\", idx),\n                        message=ChatMessage(role=\"assistant\", content=text_content),\n                        finish_reason=candidate.get(\"finishReason\")\n                    ))\n        else:\n            # Handle cases where no candidates are returned or error in response structure\n            error_text = response_data.get(\"error\", {}).get(\"message\", \"No content in Gemini response or malformed response.\")\n            logger.error(f\"Gemini response parsing issue: {error_text} | Full response: {response_data}\")\n            # Return a response indicating an error or empty content\n            choices.append(ChatCompletionChoice(\n                index=0,\n                message=ChatMessage(role=\"assistant\", content=f\"Error processing Gemini response: {error_text}\"),\n                finish_reason=\"error\"\n            ))\n\n        usage = None\n        if response_data.get(\"usageMetadata\"):\n            um = response_data[\"usageMetadata\"]\n            usage = UsageStats(\n                prompt_tokens=um.get(\"promptTokenCount\"),\n                completion_tokens=um.get(\"candidatesTokenCount\"), # Sum if multiple candidates, or just first\n                total_tokens=um.get(\"totalTokenCount\")\n            )\n        \n        return ChatCompletionResponse(\n            id=f\"gemini-{uuid.uuid4().hex}\",\n            model=model_used,\n            provider=self.provider_id,\n            choices=choices,\n            usage=usage\n        )\n\n    def _simulate_response(self, request: ChatCompletionRequest, model_used: Optional[str] = None, error_message: Optional[str] = None) -> ChatCompletionResponse:\n        model_name = model_used or request.model or self.default_model or \"simulated-gemini-model\"\n        sim_content = f\"Simulated Gemini response for model '{model_name}' to user query: '{request.messages[-1].content[:50]}...'\"\n        if error_message:\n            sim_content = f\"SIMULATION (Error occurred: {error_message}): \" + sim_content\n        \n        choice = ChatCompletionChoice(\n            index=0,\n            message=ChatMessage(role=\"assistant\", content=sim_content),\n            finish_reason=\"stop\"\n        )\n        return ChatCompletionResponse(\n            id=f\"sim-gemini-{uuid.uuid4().hex}\",\n            model=model_name,\n            provider=self.provider_id,\n            choices=[choice],\n            usage=UsageStats(prompt_tokens=10, completion_tokens=20, total_tokens=30)\n        )\nimport asyncio # Add missing import\n"
+    },
+    {
+      "title": "app/services_gateway/groq_connector.py",
+      "path": "app/services_gateway/groq_connector.py",
+      "contentType": "text/x-python",
+      "content": "import logging\nimport uuid\nimport datetime\nfrom typing import List, Dict, Any\n\nfrom app.models_gateway import ChatCompletionRequest, ChatCompletionResponse, ChatMessage, ChatCompletionChoice, UsageStats\nfrom app.services_gateway.base_connector import BaseAIConnector\nfrom app.config_gateway import settings\n\nlogger = logging.getLogger(__name__)\n\nclass GroqConnector(BaseAIConnector):\n    def __init__(self):\n        super().__init__(\n            provider_id=\"groq\",\n            api_key=settings.GROQ_API_KEY,\n            api_endpoint=settings.GROQ_API_ENDPOINT, # e.g., \"https://api.groq.com/openai/v1\"\n            default_model=settings.GROQ_DEFAULT_MODEL # e.g., \"llama3-8b-8192\"\n        )\n\n    async def create_chat_completion(\n        self, \n        request: ChatCompletionRequest\n    ) -> ChatCompletionResponse:\n        if not self.api_key or self.api_key == \"YOUR_GROQ_API_KEY_HERE\":\n            logger.warning(\"SIMULATING Groq call due to missing API key.\")\n            return self._simulate_response(request)\n\n        model_to_use = request.model or self.default_model\n        if not model_to_use:\n            raise ValueError(\"Groq model not specified and no default configured.\")\n\n        # Groq uses an OpenAI-compatible API, so the endpoint is typically fixed for completions.\n        full_api_url = f\"{self.api_endpoint}/chat/completions\"\n\n        headers = {\n            \"Authorization\": f\"Bearer {self.api_key}\",\n            \"Content-Type\": \"application/json\"\n        }\n\n        # Transform messages to OpenAI's format (which Groq uses)\n        openai_messages = []\n        for msg in request.messages:\n            openai_messages.append({\"role\": msg.role, \"content\": msg.content})\n        \n        payload = {\n            \"model\": model_to_use,\n            \"messages\": openai_messages,\n            \"max_tokens\": request.max_tokens,\n            \"temperature\": request.temperature,\n            \"stream\": request.stream \n            # Add other OpenAI compatible params if needed: top_p, etc.\n        }\n\n        try:\n            # logger.debug(f\"Groq Request URL: {full_api_url}\")\n            # logger.debug(f\"Groq Request Payload: {payload}\")\n            # http_response = await self._make_http_request(\"POST\", full_api_url, headers=headers, json_data=payload)\n            # response_data = http_response.json()\n            # logger.debug(f\"Groq Raw Response: {response_data}\")\n            # return self._parse_openai_compatible_response(response_data, request, model_to_use, self.provider_id)\n\n            # ---- SIMULATION BLOCK ----\n            logger.warning(f\"SIMULATING actual Groq API call to {full_api_url}\")\n            await asyncio.sleep(0.1) # Groq is fast!\n            return self._simulate_response(request, model_to_use)\n            # ---- END SIMULATION BLOCK ----\n\n        except Exception as e:\n            logger.error(f\"Error in Groq connector: {e}\", exc_info=True)\n            raise HTTPException(status_code=500, detail=f\"Groq API interaction failed: {str(e)}\")\n\n    def _parse_openai_compatible_response(self, response_data: Dict[str, Any], original_request: ChatCompletionRequest, model_used: str, provider_id: str) -> ChatCompletionResponse:\n        # This parser can be reused for any OpenAI-compatible API\n        choices = []\n        if response_data.get(\"choices\"):\n            for choice_data in response_data[\"choices\"]:\n                message_data = choice_data.get(\"message\", {})\n                choices.append(ChatCompletionChoice(\n                    index=choice_data.get(\"index\", 0),\n                    message=ChatMessage(\n                        role=message_data.get(\"role\", \"assistant\"), \n                        content=message_data.get(\"content\", \"\")\n                    ),\n                    finish_reason=choice_data.get(\"finish_reason\")\n                ))\n        else:\n            error_text = response_data.get(\"error\", {}).get(\"message\", \"No content in provider response or malformed.\")\n            logger.error(f\"{provider_id} response parsing issue: {error_text} | Full response: {response_data}\")\n            choices.append(ChatCompletionChoice(\n                index=0,\n                message=ChatMessage(role=\"assistant\", content=f\"Error processing {provider_id} response: {error_text}\"),\n                finish_reason=\"error\"\n            ))\n\n        usage_data = response_data.get(\"usage\")\n        usage = None\n        if usage_data:\n            usage = UsageStats(\n                prompt_tokens=usage_data.get(\"prompt_tokens\"),\n                completion_tokens=usage_data.get(\"completion_tokens\"),\n                total_tokens=usage_data.get(\"total_tokens\")\n            )\n        \n        return ChatCompletionResponse(\n            id=response_data.get(\"id\", f\"{provider_id}-{uuid.uuid4().hex}\"),\n            object=response_data.get(\"object\", \"chat.completion\"),\n            created=response_data.get(\"created\", int(datetime.datetime.now(datetime.timezone.utc).timestamp())),\n            model=response_data.get(\"model\", model_used),\n            provider=provider_id,\n            choices=choices,\n            usage=usage\n        )\n\n    def _simulate_response(self, request: ChatCompletionRequest, model_used: Optional[str] = None) -> ChatCompletionResponse:\n        model_name = model_used or request.model or self.default_model or \"simulated-groq-model\"\n        sim_content = f\"Simulated Groq response for model '{model_name}' (super fast!) to user query: '{request.messages[-1].content[:50]}...'\"\n        choice = ChatCompletionChoice(\n            index=0,\n            message=ChatMessage(role=\"assistant\", content=sim_content),\n            finish_reason=\"stop\"\n        )\n        return ChatCompletionResponse(\n            id=f\"sim-groq-{uuid.uuid4().hex}\",\n            model=model_name,\n            provider=self.provider_id,\n            choices=[choice],\n            usage=UsageStats(prompt_tokens=5, completion_tokens=15, total_tokens=20)\n        )\nimport asyncio # Add missing import\nfrom typing import Optional # Add missing import\n"
+    },
+    {
+      "title": "app/services_gateway/router_logic.py",
+      "path": "app/services_gateway/router_logic.py",
+      "contentType": "text/x-python",
+      "content": "import logging\nfrom fastapi import HTTPException\n\nfrom app.models_gateway import ChatCompletionRequest, ChatCompletionResponse\nfrom app.services_gateway.gemini_connector import GeminiConnector\nfrom app.services_gateway.groq_connector import GroqConnector\n# Import other connectors here as they are added\n\nlogger = logging.getLogger(__name__)\n\n# Initialize connectors (could be done more dynamically, e.g., based on config)\ngemini_connector = GeminiConnector()\ngroq_connector = GroqConnector()\n# other_connector = OtherConnector()\n\nPROVIDER_MAP = {\n    \"gemini\": gemini_connector,\n    \"gemini-free\": gemini_connector, # Alias\n    \"groq\": groq_connector,\n    \"groq-cloud\": groq_connector, # Alias\n    # \"other_provider\": other_connector,\n}\n\nasync def route_chat_completion(\n    request: ChatCompletionRequest\n) -> ChatCompletionResponse:\n    provider_id_lower = request.provider.lower()\n    connector = PROVIDER_MAP.get(provider_id_lower)\n\n    if not connector:\n        logger.error(f\"Unsupported or unknown provider: {request.provider}\")\n        valid_providers = list(PROVIDER_MAP.keys())\n        raise HTTPException(\n            status_code=400, \n            detail=f\"Unsupported provider: '{request.provider}'. Valid providers are: {valid_providers}\"\n        )\n\n    logger.info(f\"Routing chat completion request to provider: {connector.provider_id} for model: {request.model or connector.default_model}\")\n    try:\n        return await connector.create_chat_completion(request)\n    except HTTPException as e: # Re-raise HTTPExceptions from connectors\n        raise e\n    except Exception as e:\n        logger.error(f\"Error during routing or from connector '{connector.provider_id}': {e}\", exc_info=True)\n        raise HTTPException(status_code=503, detail=f\"Error communicating with provider '{connector.provider_id}': {str(e)}\")\n"
+    },
+    {
+      "title": "app/api/__init__.py",
+      "path": "app/api/__init__.py",
+      "contentType": "text/plain",
+      "content": "# API Routers for Universal AI Gateway\n"
+    },
+    {
+      "title": "app/api/inference_routes.py",
+      "path": "app/api/inference_routes.py",
+      "contentType": "text/x-python",
+      "content": "import logging\nfrom fastapi import APIRouter, HTTPException\n\nfrom app.models_gateway import ChatCompletionRequest, ChatCompletionResponse, ErrorDetailResponse\nfrom app.services_gateway.router_logic import route_chat_completion\n\nlogger = logging.getLogger(__name__)\nrouter = APIRouter()\n\n@router.post(\"/chat/completions\", \n            response_model=ChatCompletionResponse,\n            summary=\"Unified endpoint for chat completions across different AI providers.\",\n            responses={\n                400: {\"model\": ErrorDetailResponse, \"description\": \"Invalid request (e.g., unsupported provider)\"},\n                500: {\"model\": ErrorDetailResponse, \"description\": \"Internal server error or provider error\"},\n                503: {\"model\": ErrorDetailResponse, \"description\": \"Error communicating with the AI provider\"}\n            })\nasync def chat_completions_endpoint(request: ChatCompletionRequest):\n    \"\"\"\n    Receives a chat completion request and routes it to the specified AI provider.\n\n    - **provider**: Identifier for the AI provider (e.g., 'gemini', 'groq').\n    - **model**: Specific model name for the provider. If None, provider's default is used.\n    - **messages**: A list of chat messages, similar to OpenAI's format.\n    - **max_tokens**: Maximum tokens for the generated response.\n    - **temperature**: Sampling temperature.\n    - **stream**: (Boolean) Whether to stream results (currently stubbed/simulated).\n    \"\"\"\n    try:\n        # The actual call to the provider is handled by the router_logic\n        # which selects the appropriate connector.\n        return await route_chat_completion(request)\n    except HTTPException as e:\n        # Re-raise HTTPExceptions that might come from router_logic or connectors\n        raise e\n    except ValueError as ve:\n        logger.warning(f\"Validation error in chat completions request: {ve}\")\n        raise HTTPException(status_code=400, detail=str(ve))\n    except Exception as e:\n        logger.error(f\"Unexpected error in chat_completions_endpoint: {e}\", exc_info=True)\n        # This will be caught by the generic exception handler in main.py\n        raise HTTPException(status_code=500, detail=\"An unexpected error occurred processing your request.\")\n\n# Example for a potential text generation endpoint (not fully implemented here)\n# @router.post(\"/text/generate\", response_model=TextGenerationResponse)\n# async def text_generation_endpoint(request: TextGenerationRequest):\n#     # Similar logic to route to appropriate text generation connectors\n#     raise HTTPException(status_code=501, detail=\"Text generation endpoint not yet implemented.\")\n"
+    },
+    {
+      "title": "app/api/system_routes.py",
+      "path": "app/api/system_routes.py",
+      "contentType": "text/x-python",
+      "content": "import logging\nimport datetime\nfrom fastapi import APIRouter\n\nfrom app.config_gateway import settings\nfrom app.models_gateway import HealthStatus, SystemCapabilitiesResponse, ProviderCapability\n\nlogger = logging.getLogger(__name__)\nrouter = APIRouter()\n\n@router.get(\"/health\", \n            response_model=HealthStatus,\n            summary=\"Get gateway health status\")\nasync def get_system_health():\n    return HealthStatus(\n        app_name=settings.APP_NAME,\n        version=settings.APP_VERSION,\n        timestamp=datetime.datetime.now(datetime.timezone.utc)\n    )\n\n@router.get(\"/capabilities\", \n            response_model=SystemCapabilitiesResponse,\n            summary=\"Get gateway capabilities and configured provider status\")\nasync def get_system_capabilities():\n    supported_providers = []\n    \n    # Gemini Status\n    gemini_status = \"key_missing\"\n    gemini_notes = \"GEMINI_API_KEY not found in environment. Calls will be fully simulated.\"\n    if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != \"YOUR_GEMINI_API_KEY_HERE\":\n        gemini_status = \"configured\" # In reality, you might ping the API to confirm key validity\n        gemini_notes = \"Gemini connector is configured (calls are stubbed/simulated in this version).\"\n    supported_providers.append(ProviderCapability(\n        provider_id=\"gemini\", \n        status=gemini_status, \n        default_model=settings.GEMINI_DEFAULT_MODEL,\n        notes=gemini_notes\n    ))\n\n    # Groq Status\n    groq_status = \"key_missing\"\n    groq_notes = \"GROQ_API_KEY not found in environment. Calls will be fully simulated.\"\n    if settings.GROQ_API_KEY and settings.GROQ_API_KEY != \"YOUR_GROQ_API_KEY_HERE\":\n        groq_status = \"configured\"\n        groq_notes = \"Groq connector is configured (calls are stubbed/simulated in this version).\"\n    supported_providers.append(ProviderCapability(\n        provider_id=\"groq\", \n        status=groq_status, \n        default_model=settings.GROQ_DEFAULT_MODEL,\n        notes=groq_notes\n    ))\n    \n    # Add other providers here\n\n    api_endpoints = [\n        {\"method\": \"POST\", \"path\": \"/api/v1/inference/chat/completions\", \"summary\": \"Unified chat completions endpoint.\"},\n        {\"method\": \"GET\", \"path\": \"/system/health\", \"summary\": \"System health check.\"},\n        {\"method\": \"GET\", \"path\": \"/system/capabilities\", \"summary\": \"This capabilities endpoint.\"}\n    ]\n    \n    return SystemCapabilitiesResponse(\n        app_name=settings.APP_NAME,\n        version=settings.APP_VERSION,\n        description=\"A universal AI inference gateway routing requests to various free-tier AI model providers. Connectors are stubbed and require user implementation for actual API calls.\",\n        supported_providers=supported_providers,\n        endpoints=api_endpoints\n    )\n"
+    }
+  ],
+  "setup_instructions_markdown": "# Universal AI Gateway - Setup Instructions (v0.1.0)\n\nThis server acts as an API gateway to route inference requests to various free-tier AI model providers (e.g., Gemini, Groq). **Crucially, the actual API call logic within the provider 'connectors' (`app/services_gateway/*.py`) is stubbed/simulated in this version.** You will need to implement the real API interactions and manage API keys.\n\n## Prerequisites\n\n- Docker & Docker Compose (v1.28+ for Compose is recommended)\n- `curl` and `jq` (optional, for easier JSON viewing from terminal)\n- API keys for any free-tier AI services you intend to integrate (e.g., Google AI Studio for Gemini, GroqCloud).\n\n## 1. Materialize Project\n\nIf you have this plan as a JSON file (e.g., `universal_ai_gateway_plan.json`), use your `relic_materializer.py` script:\n\n```bash\npython relic_materializer.py universal_ai_gateway_plan.json --output-dir ./my_gateways --force\ncd ./my_gateways/universal-ai-gateway\n```\nThis creates the `universal-ai-gateway/` directory.\n\n## 2. Environment Configuration (`.env`)\n\n1.  The `make validate-env` target (called by `make up`) will prompt you to copy `.env.example` to `.env` if `.env` is missing.\n2.  **CRITICAL**: Edit the newly created `.env` file. You **MUST** fill in the API keys for the services you want to use:\n    ```env\n    # Universal AI Gateway Configuration\n    APP_PORT=8011\n    # ... other settings ...\n\n    # --- Provider Specific Configurations (User MUST fill these for actual use) --- \n    GEMINI_API_KEY=\"YOUR_GEMINI_API_KEY_HERE\"\n    GROQ_API_KEY=\"YOUR_GROQ_API_KEY_HERE\"\n    # OTHER_FREE_PROVIDER_API_KEY=\"YOUR_OTHER_KEY\"\n    ```\n    - If API keys are not provided or left as placeholders, the respective connectors will run in a fully **simulated** mode.\n    - Review `CORS_ALLOWED_ORIGINS` if you plan to call this gateway from a frontend application on a different domain/port.\n\n## 3. Build and Run with Docker\n\n1.  **Build the Docker image**:\n    ```bash\n    make build\n    ```\n2.  **Start the application services**:\n    ```bash\n    make up\n    ```\n    The API gateway should now be running. The `make up` command will indicate the URL, typically `http://localhost:8011` (or your configured `APP_PORT`).\n\n## 4. Interacting with the API\n\nThe primary endpoint for chat is `POST /api/v1/inference/chat/completions`.\n\n**System Endpoints:**\n```bash\ncurl http://localhost:8011/system/health | jq\ncurl http://localhost:8011/system/capabilities | jq\n```\n\n**Example Chat Completion Request (using `curl`):**\n\nReplace `PROVIDER_NAME` with `gemini` or `groq`. Replace `MODEL_NAME` if desired (or omit to use default for the provider).\n\n```bash\n# Example for Gemini (simulated if API key is placeholder)\ncurl -X POST -H \"Content-Type: application/json\" -d '\\\n{\\\n  \"provider\": \"gemini\",\\\n  \"model\": \"gemini-1.5-flash-latest\", \\\n  \"messages\": [\\\n    {\"role\": \"user\", \"content\": \"Explain quantum entanglement in simple terms.\"}\\\n  ],\\\n  \"max_tokens\": 100,\\\n  \"temperature\": 0.7\\\n}' http://localhost:8011/api/v1/inference/chat/completions | jq\n\n# Example for Groq (simulated if API key is placeholder)\ncurl -X POST -H \"Content-Type: application/json\" -d '\\\n{\\\n  \"provider\": \"groq\",\\\n  \"model\": \"llama3-8b-8192\", \\\n  \"messages\": [\\\n    {\"role\": \"user\", \"content\": \"Write a short poem about a fast AI.\"}\\\n  ],\\\n  \"max_tokens\": 60,\\\n  \"temperature\": 0.8\\\n}' http://localhost:8011/api/v1/inference/chat/completions | jq\n```\n\n## 5. Implementing Real AI Provider Connectors\n\nThis is the main task left for the user:\n\n1.  **Obtain API Keys:** Sign up for the free tiers of services like Google AI Studio (for Gemini) or GroqCloud and get your API keys.\n2.  **Update `.env`:** Put your actual API keys into the `.env` file.\n3.  **Install SDKs (if necessary):**\n    *   If a provider has a Python SDK (e.g., `google-generativeai` for Gemini), add it to `requirements.txt` and run `make build` again.\n    *   For providers with simple REST APIs (like Groq's OpenAI-compatible endpoint), `httpx` (already included) is sufficient.\n4.  **Modify Connector Logic:**\n    *   Go to `app/services_gateway/gemini_connector.py` (for Gemini), `app/services_gateway/groq_connector.py` (for Groq), etc.\n    *   Remove or comment out the `SIMULATION BLOCK`.\n    *   Uncomment and complete the `_make_http_request` or SDK-specific call logic.\n    *   Ensure the payload sent to the provider matches their API specification.\n    *   Implement the `_parse_PROVIDER_response` method to correctly transform the provider's native response into the gateway's `ChatCompletionResponse` Pydantic model. Pay close attention to message structures, token counts, and finish reasons.\n    *   Handle provider-specific errors gracefully.\n\n## 6. Stopping and Cleaning Up\n\n-   **Stop services**: `make down`\n-   **Full cleanup** (removes containers, and the Docker image):\n    ```bash\n    make clean\n    ```\n\n## Development Notes\n\n-   Logs: `make logs`.\n-   The gateway attempts to standardize requests and responses, but you'll need to consult the documentation for each specific AI provider's free tier to understand their exact capabilities, rate limits, and data formats.\n-   Implementing robust error handling, retry logic, and accurate rate limit tracking for multiple free APIs is a complex task beyond this initial stub."
+}
+```
+
+### File: python/generic_python_executor.py
+```python
+#!/usr/bin/env python3
+# config/scripts/core/generic_python_executor.py
+import sys
+import json
+import subprocess
+import os
+
+# Define a base directory for allowed user scripts for security
+# This should ideally be an absolute path configured robustly,
+# or a path made canonical relative to a known project root.
+# For this example, let's assume scripts are in a 'user_scripts' subdir
+# relative to where generic_python_executor.py is located.
+# THIS PATH CHECKING NEEDS TO BE VERY ROBUST IN A REAL SYSTEM.
+ALLOWED_SCRIPT_BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "user_scripts") # e.g. config/scripts/user_scripts/
+
+def main():
+    if len(sys.argv) < 2:
+        print("CRITICAL_ERROR: generic_python_executor.py requires at least one argument (the JSON parameters string).", file=sys.stderr)
+        sys.exit(1)
+
+    params_json_str = sys.argv[1]
+
+    try:
+        params = json.loads(params_json_str)
+    except json.JSONDecodeError as e:
+        print(f"CRITICAL_ERROR: Invalid JSON parameters string provided: {e}", file=sys.stderr)
+        print(f"Received: {params_json_str}", file=sys.stderr)
+        sys.exit(1)
+
+    target_script_relative_path = params.get("script_path")
+    script_specific_params_obj = params.get("script_params", {}) # Default to empty dict
+
+    if not target_script_relative_path or not isinstance(target_script_relative_path, str):
+        print("CRITICAL_ERROR: 'script_path' string parameter is missing or invalid in JSON.", file=sys.stderr)
+        sys.exit(1)
+
+    # --- Security: Path Validation ---
+    # Convert to absolute path and normalize
+    # This base path should be the root of your allowed user scripts directory
+    # Example: /home/mlamkadm/ai-repos/agents/agent-lib/config/scripts/user_scripts
+    # Ensure ALLOWED_SCRIPT_BASE_DIR is an absolute, canonical path.
+    # For this example, we calculate it relative to this executor script.
+    # In a real app, configure this globally and pass it or make it well-known.
+    
+    # Ensure ALLOWED_SCRIPT_BASE_DIR is absolute and canonical for robust comparison
+    abs_allowed_script_base_dir = os.path.abspath(ALLOWED_SCRIPT_BASE_DIR)
+    
+    # Resolve the target script path relative to the allowed base
+    # os.path.join is safer than string concatenation for paths
+    prospective_script_path = os.path.join(abs_allowed_script_base_dir, target_script_relative_path)
+    
+    # Normalize the path (resolve .., ., symlinks)
+    abs_target_script_path = os.path.normpath(os.path.abspath(prospective_script_path))
+
+    # Check if the resolved path is truly within the allowed base directory
+    if not abs_target_script_path.startswith(abs_allowed_script_base_dir + os.sep) and abs_target_script_path != abs_allowed_script_base_dir :
+        print(f"SECURITY_ERROR: Target script path '{target_script_relative_path}' resolves outside of the allowed base directory '{abs_allowed_script_base_dir}'. Resolved to '{abs_target_script_path}'. Execution denied.", file=sys.stderr)
+        sys.exit(1)
+        
+    if not os.path.exists(abs_target_script_path):
+        print(f"CRITICAL_ERROR: Target script '{abs_target_script_path}' not found.", file=sys.stderr)
+        sys.exit(1)
+        
+    if not os.path.isfile(abs_target_script_path):
+        print(f"CRITICAL_ERROR: Target script path '{abs_target_script_path}' is not a file.", file=sys.stderr)
+        sys.exit(1)
+    # --- End Security: Path Validation ---
+
+
+    # Pass script_specific_params_obj as a JSON string to the target script
+    script_params_json_str_for_target = json.dumps(script_specific_params_obj)
+
+    command = ["python3", abs_target_script_path, script_params_json_str_for_target]
+
+    print(f"Executing Python script: {' '.join(command)}", file=sys.stderr) # Log for debugging
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,  # We will check returncode manually
+            timeout=60  # Add a timeout for safety
+        )
+
+        if result.stdout:
+            print(result.stdout.strip()) # This is the primary output for the agent
+
+        if result.stderr:
+            # Log stderr for debugging but don't necessarily fail the whole tool
+            # unless returncode is non-zero.
+            print(f"Script STDERR for {target_script_relative_path}:\n{result.stderr.strip()}", file=sys.stderr)
+
+        if result.returncode != 0:
+            print(f"ERROR: Target script {target_script_relative_path} exited with status {result.returncode}", file=sys.stderr)
+            # The C++ side will typically capture stdout as the result.
+            # If you want to signal error explicitly, stdout could contain an error message.
+            # Or, the C++ side can check the overall executeScriptTool exit status.
+            # For now, what's printed to stdout (even if an error message from the script) is returned.
+
+    except subprocess.TimeoutExpired:
+        print(f"ERROR: Target script {target_script_relative_path} timed out after 60 seconds.", file=sys.stderr)
+        # Return an error message via stdout
+        print(f"Error: Script {target_script_relative_path} timed out.")
+        sys.exit(1) # Ensure non-zero exit for timeout
+    except Exception as e:
+        print(f"CRITICAL_ERROR: Failed to execute target Python script '{target_script_relative_path}': {e}", file=sys.stderr)
+        # Return an error message via stdout
+        print(f"Error: Could not execute script {target_script_relative_path} - {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+```
+
+create a simple sway WM tool. use py. make it encompases all the basic features of sway. STRICTLY follow the modular folder structure provided for tools and the bigger agent parent folder.

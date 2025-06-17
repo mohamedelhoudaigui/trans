@@ -7,29 +7,36 @@ import DropdownMenu from './DropdownMenu';
 
 /**
  * The specific profile dropdown menu for the authenticated user.
- * - Uses the generic DropdownMenu for its behavior.
- * - Pulls the authenticated user's data from AuthContext.
- * - Renders the user's avatar as the trigger.
- * - Provides dynamic links to the user's own profile and settings.
- * - Contains the logout functionality.
+ * - Uses the generic DropdownMenu for its open/close behavior.
+ * - Pulls the authenticated user's data from AuthContext to display their name
+ *   and provide a dynamic link to their own profile.
+ * - Renders the user's avatar as the trigger for the dropdown.
+ * - Contains navigation links to key user-specific pages and the logout function.
  */
 export default function ProfileMenu() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  if (!user) return null; // Do not render if there's no user
+  // If there is no user, this component should not render anything.
+  if (!user) {
+    return null;
+  }
 
+  // Handles the logout process and redirects the user to the login page.
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
+  // The trigger component is the user's avatar, which opens the dropdown on click.
   const trigger = (
     <div className="user-avatar-container">
       <img
         src={user.avatar || '/avatars/default.png'}
         alt="Profile Avatar"
         className="user-avatar-image"
+        // Fallback for broken avatar links
+        onError={(e) => { e.currentTarget.src = '/avatars/default.png'; }}
       />
       <div className="status-indicator status-online"></div>
     </div>

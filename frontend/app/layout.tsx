@@ -15,6 +15,7 @@ import "./globals.css";
  *   available to all components, client or server. This is the root
  *   of our state tree for authentication.
  */
+
 export default function RootLayout({
   children,
 }: Readonly<{
