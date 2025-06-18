@@ -103,7 +103,7 @@ class Game {
         clearInterval(this.interval);
         const winnerId = this.score[this.player1.id] >= 11 ? this.player1.id : this.player2.id;
         const loserId = winnerId === this.player1.id ? this.player2.id : this.player1.id;
-        
+        makwagger-specsmwagger-specsmd
         this.broadcast('gameOver', { winner: winnerId, score: this.score });
         
         // Notify the manager so it can clean up and update stats

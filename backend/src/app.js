@@ -1,4 +1,3 @@
-// backend/src/app.js
 const fastify = require('fastify')({ logger: true });
 const fastifyJwt = require('@fastify/jwt');
 const fastifyWebSocket = require('@fastify/websocket');

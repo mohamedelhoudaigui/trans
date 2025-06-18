@@ -71,3 +71,6 @@ async function AuthRoutes(fastify)
 }
 
 module.exports = AuthRoutes
+
+// swagger specification for the above routes
+

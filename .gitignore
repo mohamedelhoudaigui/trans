@@ -9,7 +9,7 @@ lerna-debug.log*
 
 # Development && Build (devops)
 devops/external-volumes/*
-docs/
+# docs/
 backend/database.db
 # frontend/
 
