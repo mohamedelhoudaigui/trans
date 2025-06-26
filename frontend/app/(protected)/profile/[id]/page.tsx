@@ -1,4 +1,3 @@
-'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -15,7 +14,6 @@ interface UserProfile {
   avatar: string;
   wins: number;
   loses: number;
-  // We can add more stats here later, e.g., rank, title, etc.
 }
 
 // Props passed by Next.js to the page component for dynamic routes.

@@ -96,7 +96,7 @@ const AuthCtl = {
             return reply.status(409).send({
                 success: false,
                 code: 409,
-                result: "2FA secret alreday exist for this user"
+                result: "2FA secret already exist for this user"
             })
         }
 

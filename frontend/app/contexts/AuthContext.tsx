@@ -1,4 +1,3 @@
-'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
@@ -19,6 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 if (!API_BASE_URL) {
   throw new Error("FATAL_ERROR: NEXT_PUBLIC_API_BASE_URL is not defined in the environment.");
 }
